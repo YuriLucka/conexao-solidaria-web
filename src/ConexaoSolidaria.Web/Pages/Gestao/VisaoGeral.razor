@@ -80,7 +80,7 @@ else
                 <div class="hoje">
                     <div><span class="qcount tnum">@Formatos.DinheiroInteiro(r.ArrecadadoHoje)</span><span class="muted small">arrecadados</span></div>
                     <div><span class="qcount tnum">@Formatos.Numero(r.DoacoesHoje)</span><span class="muted small">@(r.DoacoesHoje == 1 ? "doação" : "doações")</span></div>
-                    <div class="hoje-pend"><span class="qcount tnum"><Icone Nome="clock" Tamanho="16" />@Formatos.Numero(r.DoacoesPendentes)</span><span class="muted small">em confirmação</span></div>
+                    <div class="hoje-pend"><span class="qcount tnum"><Icone Nome="clock" Tamanho="16" />@Formatos.Numero(r.DoacoesPendentes)</span> <span class="muted small">em confirmação</span></div>
                 </div>
             </section>
             @if (Alertas(ativas) is { Count: > 0 } alertas)

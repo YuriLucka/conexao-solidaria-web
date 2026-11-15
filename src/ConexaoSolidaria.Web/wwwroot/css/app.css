@@ -212,3 +212,13 @@ html.animar .grid-cards > .camp-card:nth-child(n+4) { animation-delay: .15s; }
 
 /* Doações recentes da campanha: valor e tempo empilhados à direita, sem grudar. */
 .doou { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+
+/* Gestão: "Instalar app" é item do menu no computador e ícone na barra de baixo no celular. */
+.g-nav .so-desktop { display: contents; }
+.g-nav .instalar-item { width: 100%; gap: 11px; padding: 9px 12px; font: 550 14.5px var(--f-body); }
+.g-user .so-celular { display: none; }
+.g-user small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 900px) {
+  .g-nav .so-desktop { display: none; }
+  .g-user .so-celular { display: contents; }
+}

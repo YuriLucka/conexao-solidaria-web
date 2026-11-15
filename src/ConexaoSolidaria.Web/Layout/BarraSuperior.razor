@@ -53,9 +53,10 @@
 
     private async Task SairAsync()
     {
+        // Sai da tela protegida antes: com a sessão já encerrada, ela pediria login e mostraria outro aviso.
+        Nav.NavigateTo("");
         await Sessao.SairAsync();
         Avisos.Info("Você saiu da sua conta.");
-        Nav.NavigateTo("");
     }
 
     public void Dispose()

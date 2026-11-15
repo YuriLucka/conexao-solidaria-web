@@ -28,11 +28,12 @@
             <button class="g-theme" @onclick="Tema.AlternarAsync" aria-pressed="@(Tema.Escuro ? "true" : "false")">
                 <Icone Nome="@(Tema.Escuro ? "sun" : "moon")" />@(Tema.Escuro ? "Tema claro" : "Tema escuro")
             </button>
+            <span class="so-desktop"><InstalarApp /></span>
         </nav>
         <div class="g-user">
             <Avatar Nome="@(Sessao.Nome ?? "")" />
             <div class="grow"><b>@Sessao.Nome</b><small>Equipe da ONG</small></div>
-            <InstalarApp Icone="true" />
+            <span class="so-celular"><InstalarApp Icone="true" /></span>
             <BotaoTema />
             <button class="btn-icon" @onclick="SairAsync" aria-label="Sair" title="Sair"><Icone Nome="logout" Tamanho="17" /></button>
         </div>
@@ -47,9 +48,10 @@
 
     private async Task SairAsync()
     {
+        // Sai da tela protegida antes: com a sessão já encerrada, ela pediria login e mostraria outro aviso.
+        Nav.NavigateTo("");
         await Sessao.SairAsync();
         Avisos.Info("Você saiu da sua conta.");
-        Nav.NavigateTo("");
     }
 
     public void Dispose() => Tema.Mudou -= Atualizar;

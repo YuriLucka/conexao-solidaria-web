@@ -1,5 +1,6 @@
 ﻿@inject Sessao Sessao
 @inject Tema Tema
+@inject IJSRuntime Js
 
 <MudThemeProvider Theme="TemaMud.Marca" IsDarkMode="Tema.Escuro" />
 <MudPopoverProvider />
@@ -31,11 +32,23 @@
 
 @code {
     private bool _pronto;
+    private bool _aberturaFechada;
 
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(Sessao.CarregarAsync(), Tema.CarregarAsync());
         Tema.Mudou += () => InvokeAsync(StateHasChanged);
         _pronto = true;
+    }
+
+    // A abertura só sai quando a primeira tela já está desenhada: sem piscar em branco enquanto a sessão é restaurada.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pronto && !_aberturaFechada)
+        {
+            _aberturaFechada = true;
+            try { await Js.InvokeVoidAsync("cs.fecharAbertura"); }
+            catch (JSException) { }
+        }
     }
 }
