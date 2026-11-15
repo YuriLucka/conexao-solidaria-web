@@ -38,12 +38,12 @@ public static class Formatos
 
     public static int DiasRestantes(DateTime dataFim) => (int)Math.Ceiling((Utc(dataFim) - DateTime.UtcNow).TotalDays);
 
-    // "Faltam 13 dias", "Termina amanhã", "Termina hoje", "Prazo encerrado".
+    // "Faltam 13 dias", "Termina amanhã", "Termina hoje", "Terminou em 10/11/2026" (o selo "Prazo encerrado" fica ao lado).
     public static string Prazo(string status, DateTime dataFim, bool prazoEncerrado)
     {
         if (status == "Concluida") return $"Término em {Data(dataFim)}";
         if (status == "Cancelada") return "Cancelada";
-        if (prazoEncerrado) return "Prazo encerrado";
+        if (prazoEncerrado) return $"Terminou em {Data(dataFim)}";
         var d = DiasRestantes(dataFim);
         return d <= 0 ? "Termina hoje" : d == 1 ? "Termina amanhã" : $"Faltam {d} dias";
     }

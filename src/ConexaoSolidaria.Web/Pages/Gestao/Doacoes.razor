@@ -10,43 +10,38 @@
     <div><span class="eyebrow">Gestão</span><h1>Doações</h1><p>Todas as doações recebidas, da mais recente para a mais antiga.</p></div>
 </div>
 
-@if (_erro is not null)
+@if (_erro is not null && _dados is null)
 {
     <Estado Expressao="preocupado" Titulo="Não conseguimos carregar as doações" Texto="@_erro">
         <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
     </Estado>
 }
-else if (_todas is null)
+else if (_dados is null)
 {
     <Carregando Texto="Buscando as doações" />
 }
 else
 {
-    var daCampanha = _todas.Where(d => _campanha == "" || d.IdCampanha.ToString() == _campanha).ToList();
-    var lista = daCampanha.Where(d => _situacao == "Todas" || d.Status == _situacao)
-        .Where(d => _busca.Trim() is "" || d.NomeDoador.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
-    var confirmadas = lista.Where(d => d.Status == "Processada").ToList();
-    var paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
-    var pagina = Math.Min(_pagina, paginas);
+    var t = _dados.Totais;
     <div class="tiles">
-        <div class="tile hero"><span class="lbl">Total confirmado</span><span class="val">@Formatos.DinheiroInteiro(confirmadas.Sum(d => d.ValorDoacao))</span><span class="small muted">com os filtros atuais</span></div>
-        <div class="tile"><span class="lbl">Doações</span><span class="val">@Formatos.Numero(lista.Count)</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(confirmadas.Count == 0 ? 0 : confirmadas.Average(d => d.ValorDoacao))</span></div>
-        <div class="tile"><span class="lbl">Em confirmação agora</span><span class="val">@daCampanha.Count(d => d.Status == "Pendente")</span></div>
+        <div class="tile hero"><span class="lbl">Total confirmado</span><span class="val">@Formatos.DinheiroInteiro(t.TotalConfirmado)</span><span class="small muted">@(_campanha == "" ? "em todas as campanhas" : "na campanha selecionada")</span></div>
+        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t.Confirmadas)</span></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(t.TicketMedio)</span></div>
+        <div class="tile"><span class="lbl">Em confirmação agora</span><span class="val">@Formatos.Numero(t.Pendentes)</span></div>
     </div>
     <div class="toolbar">
-        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por doador" aria-label="Buscar doações" @bind="_busca" @bind:event="oninput" @bind:after="() => _pagina = 1" /></div>
-        <select aria-label="Filtrar por campanha" style="width:auto;max-width:100%;border-radius:999px" @bind="_campanha" @bind:after="() => _pagina = 1">
+        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por doador" aria-label="Buscar doações" @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync" /></div>
+        <select aria-label="Filtrar por campanha" class="filtro-campanha" @bind="_campanha" @bind:after="() => IrParaAsync(1)">
             <option value="">Todas as campanhas</option>
-            @foreach (var c in _todas.GroupBy(d => d.IdCampanha).Select(g => (g.Key, g.First().TituloCampanha)).OrderBy(x => x.Item2))
+            @foreach (var c in _campanhas)
             {
-                <option value="@c.Key">@c.Item2</option>
+                <option value="@c.Id">@c.Titulo</option>
             }
         </select>
         <div class="chips" role="group" aria-label="Filtrar por situação">
             @foreach (var (s, rotulo) in Situacoes)
             {
-                <button class="chip @(_situacao == s ? "on" : "")" aria-pressed="@(_situacao == s ? "true" : "false")" @onclick="() => { _situacao = s; _pagina = 1; }">@rotulo <span>@Formatos.Numero(daCampanha.Count(d => s == "Todas" || d.Status == s))</span></button>
+                <button class="chip @(_situacao == s ? "on" : "")" aria-pressed="@(_situacao == s ? "true" : "false")" @onclick="() => MudarSituacaoAsync(s)">@rotulo <span>@Formatos.Numero(Contar(t, s))</span></button>
             }
         </div>
     </div>
@@ -55,53 +50,86 @@ else
             <table class="table rtable" style="min-width:820px">
                 <thead><tr><th>Data</th><th>Doador</th><th>Campanha</th><th class="num">Valor</th><th>Situação</th></tr></thead>
                 <tbody>
-                    @foreach (var d in lista.Skip((pagina - 1) * PorPagina).Take(PorPagina))
+                    @foreach (var d in _dados.Itens)
                     {
                         <tr>
                             <td class="tnum small" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
-                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div><b>@d.NomeDoador</b></div></div></td>
-                            <td class="full o1"><a href="gestao/campanhas/@d.IdCampanha">@d.TituloCampanha</a></td>
+                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div class="corta"><b title="@d.NomeDoador">@d.NomeDoador</b></div></div></td>
+                            <td class="full o1"><a class="corta-2" href="gestao/campanhas/@d.IdCampanha" title="@d.TituloCampanha">@d.TituloCampanha</a></td>
                             <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
                             <td><SeloDoacao Status="@d.Status" /></td>
                         </tr>
                     }
-                    @if (lista.Count == 0)
+                    @if (_dados.Itens.Count == 0)
                     {
-                        <tr><td colspan="5" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhuma doação encontrada" Texto="Tente outro filtro." Tamanho="100" Classe="state-sm" /></td></tr>
+                        <tr><td colspan="5" class="empty-cell full"><Estado Expressao="espiando" Titulo="@(t.Confirmadas + t.Pendentes + t.Rejeitadas == 0 ? "Nenhuma doação recebida ainda" : "Nenhuma doação encontrada")" Texto="@(t.Confirmadas + t.Pendentes + t.Rejeitadas == 0 ? "As doações aparecem aqui assim que forem feitas." : "Tente outro filtro.")" Tamanho="100" Classe="state-sm" /></td></tr>
                     }
                 </tbody>
             </table>
         </div>
-        <div class="pager">
-            <span>Página @pagina de @paginas</span>
-            <div class="row">
-                <button class="btn btn-ghost btn-sm" disabled="@(pagina <= 1)" @onclick="() => _pagina = pagina - 1"><Icone Nome="left" Tamanho="15" />Anterior</button>
-                <button class="btn btn-ghost btn-sm" disabled="@(pagina >= paginas)" @onclick="() => _pagina = pagina + 1">Próxima<Icone Nome="right" Tamanho="15" /></button>
-            </div>
-        </div>
+        <Paginador Pagina="_dados.Pagina" Total="_dados.Total" Tamanho="PorPagina" Ocupado="_carregando" AoMudar="IrParaAsync" />
     </div>
 }
 
 @code {
     private const int PorPagina = 20;
     private static readonly (string, string)[] Situacoes = [("Todas", "Todas"), ("Processada", "Confirmadas"), ("Pendente", "Em confirmação"), ("Rejeitada", "Não concluídas")];
-    private List<DoacaoGestao>? _todas;
+    private DoacoesGestaoPagina? _dados;
+    private List<Campanha> _campanhas = [];
     private string _busca = "", _campanha = "", _situacao = "Todas";
     private int _pagina = 1;
+    private bool _carregando;
     private string? _erro;
+    private CancellationTokenSource? _digitacao;
     private readonly CancellationTokenSource _cts = new();
+
+    private static int Contar(TotaisDoacoes t, string situacao) => situacao switch
+    {
+        "Processada" => t.Confirmadas,
+        "Pendente" => t.Pendentes,
+        "Rejeitada" => t.Rejeitadas,
+        _ => t.Confirmadas + t.Pendentes + t.Rejeitadas
+    };
 
     protected override async Task OnInitializedAsync()
     {
+        var campanhas = Api.CampanhasAsync();
         await CarregarAsync();
+        var rc = await campanhas;
+        if (rc.Ok) _campanhas = rc.Valor!.OrderBy(c => c.Titulo).ToList();
         _ = AoVivoAsync();
     }
 
     private async Task CarregarAsync()
     {
-        var r = await Api.DoacoesGestaoAsync(limite: 500);
-        if (r.Ok) (_todas, _erro) = (r.Valor, null);
-        else if (_todas is null) _erro = r.Problema!.Mensagem;
+        _carregando = true;
+        var r = await Api.DoacoesGestaoAsync(_campanha == "" ? null : Guid.Parse(_campanha), _situacao == "Todas" ? null : _situacao,
+            _busca, _pagina, PorPagina);
+        _carregando = false;
+        if (r.Ok) (_dados, _erro) = (r.Valor, null);
+        else _erro = r.Problema!.Mensagem;
+    }
+
+    private async Task IrParaAsync(int pagina)
+    {
+        _pagina = pagina;
+        await CarregarAsync();
+    }
+
+    private Task MudarSituacaoAsync(string situacao)
+    {
+        _situacao = situacao;
+        return IrParaAsync(1);
+    }
+
+    // Espera a pessoa parar de digitar (300 ms) antes de buscar no servidor.
+    private async Task BuscarAsync()
+    {
+        _digitacao?.Cancel();
+        _digitacao = new CancellationTokenSource();
+        try { await Task.Delay(300, _digitacao.Token); }
+        catch (TaskCanceledException) { return; }
+        await IrParaAsync(1);
     }
 
     private async Task AoVivoAsync()
@@ -111,6 +139,7 @@ else
         {
             while (await timer.WaitForNextTickAsync(_cts.Token))
             {
+                if (_carregando) continue;
                 await CarregarAsync();
                 await InvokeAsync(StateHasChanged);
             }
@@ -121,6 +150,7 @@ else
     public ValueTask DisposeAsync()
     {
         _cts.Cancel();
+        _digitacao?.Cancel();
         return ValueTask.CompletedTask;
     }
 }

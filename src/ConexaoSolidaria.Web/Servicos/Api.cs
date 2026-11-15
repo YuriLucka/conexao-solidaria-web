@@ -41,15 +41,21 @@ public class Api
     // Doador
     public Task<Resultado<Doacao>> DoarAsync(CriarDoacaoRequest r) => Enviar<Doacao>(HttpMethod.Post, "api/doacoes", r);
     public Task<Resultado<Doacao>> DoacaoAsync(Guid id) => Enviar<Doacao>(HttpMethod.Get, $"api/doacoes/{id}");
-    public Task<Resultado<List<Doacao>>> MinhasDoacoesAsync() => Enviar<List<Doacao>>(HttpMethod.Get, "api/doacoes/minhas");
+    public Task<Resultado<MinhasDoacoesPagina>> MinhasDoacoesAsync(int pagina = 1, int tamanho = 20)
+        => Enviar<MinhasDoacoesPagina>(HttpMethod.Get, $"api/doacoes/minhas?pagina={pagina}&tamanho={tamanho}");
 
     // Gestão
     public Task<Resultado<List<Campanha>>> CampanhasAsync() => Enviar<List<Campanha>>(HttpMethod.Get, "api/campanhas");
     public Task<Resultado<Campanha>> CriarCampanhaAsync(SalvarCampanhaRequest r) => Enviar<Campanha>(HttpMethod.Post, "api/campanhas", r);
     public Task<Resultado<Campanha>> AtualizarCampanhaAsync(Guid id, SalvarCampanhaRequest r) => Enviar<Campanha>(HttpMethod.Put, $"api/campanhas/{id}", r);
-    public Task<Resultado<List<DoacaoGestao>>> DoacoesGestaoAsync(Guid? campanha = null, string? status = null, int limite = 200)
-        => Enviar<List<DoacaoGestao>>(HttpMethod.Get, $"api/doacoes?limite={limite}{(campanha is null ? "" : $"&idCampanha={campanha}")}{(status is null ? "" : $"&status={status}")}");
-    public Task<Resultado<List<DoadorGestao>>> DoadoresAsync() => Enviar<List<DoadorGestao>>(HttpMethod.Get, "api/gestao/doadores");
+    public Task<Resultado<DoacoesGestaoPagina>> DoacoesGestaoAsync(Guid? campanha = null, string? status = null, string? busca = null,
+        int pagina = 1, int tamanho = 20)
+        => Enviar<DoacoesGestaoPagina>(HttpMethod.Get, $"api/doacoes?pagina={pagina}&tamanho={tamanho}"
+            + (campanha is null ? "" : $"&idCampanha={campanha}") + (status is null ? "" : $"&status={status}")
+            + (string.IsNullOrWhiteSpace(busca) ? "" : $"&busca={Uri.EscapeDataString(busca.Trim())}"));
+    public Task<Resultado<DoadoresGestaoPagina>> DoadoresAsync(string? busca = null, int pagina = 1, int tamanho = 20)
+        => Enviar<DoadoresGestaoPagina>(HttpMethod.Get, $"api/gestao/doadores?pagina={pagina}&tamanho={tamanho}"
+            + (string.IsNullOrWhiteSpace(busca) ? "" : $"&busca={Uri.EscapeDataString(busca.Trim())}"));
     public Task<Resultado<ResumoGestao>> ResumoAsync(int dias) => Enviar<ResumoGestao>(HttpMethod.Get, $"api/gestao/resumo?dias={dias}");
 
     private async Task<Resultado<T>> Enviar<T>(HttpMethod metodo, string rota, object? corpo = null, bool autenticado = true)

@@ -21,14 +21,25 @@ else if (_todas is null)
 {
     <Carregando Texto="Buscando as campanhas" />
 }
+else if (_todas.Count == 0)
+{
+    <div class="card">
+        <Estado Expressao="acenando" Titulo="Nenhuma campanha cadastrada ainda" Texto="Crie a primeira campanha: ela aparece no painel público assim que for salva." Tamanho="140">
+            <a class="btn btn-primary" href="gestao/campanhas/nova"><Icone Nome="plus" Tamanho="17" />Nova campanha</a>
+        </Estado>
+    </div>
+}
 else
 {
+    var lista = Lista.ToList();
+    var paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
+    var pagina = Math.Min(_pagina, paginas);
     <div class="toolbar">
-        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por título ou categoria" aria-label="Buscar campanhas" @bind="_busca" @bind:event="oninput" /></div>
+        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por título ou categoria" aria-label="Buscar campanhas" @bind="_busca" @bind:event="oninput" @bind:after="() => _pagina = 1" /></div>
         <div class="chips" role="group" aria-label="Filtrar por status">
             @foreach (var (status, rotulo) in Filtros)
             {
-                <button class="chip @(_filtro == status ? "on" : "")" aria-pressed="@(_filtro == status ? "true" : "false")" @onclick="() => _filtro = status">@rotulo <span>@Contar(status)</span></button>
+                <button class="chip @(_filtro == status ? "on" : "")" aria-pressed="@(_filtro == status ? "true" : "false")" @onclick="() => { _filtro = status; _pagina = 1; }">@rotulo <span>@Contar(status)</span></button>
             }
         </div>
     </div>
@@ -37,14 +48,14 @@ else
             <table class="table rtable" style="min-width:860px">
                 <thead><tr><th>Campanha</th><th>Período</th><th class="num">Meta</th><th style="width:220px">Arrecadado</th><th>Status</th><th class="num">Ações</th></tr></thead>
                 <tbody>
-                    @foreach (var c in Lista)
+                    @foreach (var c in lista.Skip((pagina - 1) * PorPagina).Take(PorPagina))
                     {
                         var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
                         <tr class="click" @onclick="() => Abrir(c.Id)">
                             <td class="full first">
                                 <div class="row" style="gap:12px;flex-wrap:nowrap">
                                     <span class="capa-mini"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></span>
-                                    <div><a href="gestao/campanhas/@c.Id" @onclick:stopPropagation="true">@c.Titulo</a><div class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</div></div>
+                                    <div class="corta-bloco"><a class="corta-2" href="gestao/campanhas/@c.Id" title="@c.Titulo" @onclick:stopPropagation="true">@c.Titulo</a><div class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</div></div>
                                 </div>
                             </td>
                             <td class="tnum small" data-label="Período">@Formatos.Data(c.DataInicio)<br /><span class="muted">até @Formatos.Data(c.DataFim)</span></td>
@@ -54,18 +65,21 @@ else
                             <td class="num end"><a class="btn btn-ghost btn-sm" href="gestao/campanhas/@c.Id/editar" @onclick:stopPropagation="true"><Icone Nome="edit" Tamanho="15" />Editar</a></td>
                         </tr>
                     }
-                    @if (!Lista.Any())
+                    @if (lista.Count == 0)
                     {
                         <tr><td colspan="6" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhuma campanha encontrada" Texto="Tente outro filtro ou outra busca." Tamanho="110" Classe="state-sm" /></td></tr>
                     }
                 </tbody>
             </table>
         </div>
+        <Paginador Pagina="pagina" Total="lista.Count" Tamanho="PorPagina" AoMudar="p => _pagina = p" />
     </div>
 }
 
 @code {
     private static readonly (string, string)[] Filtros = [("Todas", "Todas"), ("Ativa", "Ativa"), ("Concluida", "Concluída"), ("Cancelada", "Cancelada")];
+    private const int PorPagina = 20;
+    private int _pagina = 1;
     private List<Campanha>? _todas;
     private string _filtro = "Todas";
     private string _busca = "";

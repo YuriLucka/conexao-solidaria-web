@@ -27,8 +27,36 @@ window.cs = {
     window.cs._obsDoar = new IntersectionObserver(es => es.forEach(e => bar.classList.toggle('oculta', e.isIntersecting)), { threshold: .2 });
     window.cs._obsDoar.observe(card);
   },
-  focar: id => document.getElementById(id)?.focus()
+  focar: id => document.getElementById(id)?.focus(),
+
+  // Conta de 0 até o valor final (uma vez, na primeira exibição). O texto final já vem renderizado pelo Blazor,
+  // então sem JavaScript ou com "reduzir movimento" o número aparece direto.
+  contar: (el, valor, moeda) => {
+    if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches || !(valor > 0)) return;
+    const formato = new Intl.NumberFormat('pt-BR', moeda ? { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 } : { maximumFractionDigits: 0 });
+    const final = el.textContent, inicio = performance.now(), duracao = 1100;
+    const passo = agora => {
+      const t = Math.min(1, (agora - inicio) / duracao), suave = 1 - Math.pow(1 - t, 3);
+      el.textContent = t < 1 ? formato.format(Math.round(valor * suave)) : final;
+      if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
 };
+
+// Entrada suave dos blocos marcados com .revelar ao entrarem na tela. Só esconde quando o observador existe
+// (classe "animar" no <html>); com "reduzir movimento" nada se move.
+(() => {
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('animar');
+  const obs = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visivel'); obs.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -8% 0px' });
+  const ligar = raiz => raiz.querySelectorAll?.('.revelar:not(.visivel)').forEach(el => obs.observe(el));
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches('.revelar')) obs.observe(n); ligar(n); } })))
+    .observe(document.documentElement, { childList: true, subtree: true });
+  ligar(document);
+})();
 
 // Aplica o tema antes do Blazor carregar, para não piscar claro no modo escuro.
 window.cs.aplicarTema(window.cs.temaPreferido());

@@ -15,7 +15,7 @@
         </div>
     </div>
 </section>
-<div class="wrap section">
+<div class="wrap section revelar">
     <span class="eyebrow">Como funciona</span>
     <h2 style="margin:8px 0 20px;font-size:28px">Do clique ao impacto</h2>
     <ol class="howto" style="padding:0;margin:0">
@@ -25,7 +25,20 @@
         <li><b>Acompanhe</b><p>Em segundos o valor entra no total da campanha, à vista de todos.</p></li>
     </ol>
 </div>
-<div class="wrap section">
+<section class="wrap section revelar" aria-labelledby="historias-titulo">
+    <span class="eyebrow">Histórias</span>
+    <h2 id="historias-titulo" style="margin:8px 0 20px;font-size:28px">Quem faz parte</h2>
+    <div class="historias">
+        @foreach (var (texto, nome, papel) in Historias)
+        {
+            <figure class="historia">
+                <blockquote>@texto</blockquote>
+                <figcaption><Avatar Nome="@nome" /><div><b>@nome</b><small>@papel</small></div></figcaption>
+            </figure>
+        }
+    </div>
+</section>
+<div class="wrap section revelar">
     <h2 style="margin-bottom:16px;font-size:28px">Perguntas frequentes</h2>
     <div class="faq">
         @foreach (var (pergunta, resposta) in Perguntas)
@@ -34,7 +47,7 @@
         }
     </div>
 </div>
-<div class="wrap section">
+<div class="wrap section revelar">
     <div class="cta-band">
         <div class="cta-sol">
             <Sol Expressao="radiante" Tamanho="92" BracoA="#FFFFFF" BracoB="#F0643C" />
@@ -45,6 +58,14 @@
 </div>
 
 @code {
+    // Depoimentos ilustrativos da ONG fictícia do projeto.
+    private static readonly (string, string, string)[] Historias =
+    [
+        ("Quando a campanha do material escolar bateu a meta, entregamos as mochilas uma semana antes das aulas. Ver o painel subindo deu força para toda a equipe.", "Renata Moura", "Voluntária há quatro anos"),
+        ("Meu filho chegou à ONG com sete anos. Hoje ele lê para os menores na biblioteca. Saber que cada doação aparece no site me dá confiança para indicar a ONG.", "Cláudia Ferreira", "Mãe de uma criança acolhida"),
+        ("Doo todo mês e acompanho para onde vai cada valor. A transparência foi o que me fez continuar.", "Eduardo Lima", "Doador desde 2022")
+    ];
+
     private static readonly (string, string)[] Perguntas =
     [
         ("Por que minha doação não aparece no mesmo instante?", "Cada doação passa por uma confirmação antes de entrar no total da campanha. Isso leva poucos segundos e garante que nenhuma doação se perca, mesmo em dias de muito movimento, como no Natal."),

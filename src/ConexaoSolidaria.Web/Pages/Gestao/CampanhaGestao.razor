@@ -21,12 +21,13 @@ else
 {
     var c = _campanha;
     var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
-    var confirmadas = _doacoes?.Where(d => d.Status == "Processada").ToList() ?? [];
+    var t = _doacoes?.Totais;
+    var naoConfirmadas = (t?.Pendentes ?? 0) + (t?.Rejeitadas ?? 0);
     <a href="gestao/campanhas" class="back" style="margin:0"><Icone Nome="left" Tamanho="16" />Campanhas</a>
     <div class="g-head">
         <div>
             <div class="row"><SeloStatus Status="@c.Status" /><span class="muted small">@c.Categoria</span></div>
-            <h1>@c.Titulo</h1>
+            <h1 class="titulo-longo">@c.Titulo</h1>
             <p>@Formatos.DataHora(c.DataInicio) até @Formatos.DataHora(c.DataFim) · @Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</p>
         </div>
         <div class="g-actions">
@@ -41,32 +42,33 @@ else
     </div>
     <div class="tiles">
         <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
-        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(confirmadas.Count)</span><span class="small muted">@((_doacoes?.Count ?? 0) - confirmadas.Count) em confirmação ou não @((_doacoes?.Count ?? 0) - confirmadas.Count == 1 ? "concluída" : "concluídas")</span></div>
-        <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(confirmadas.Select(d => d.DoadorId).Distinct().Count())</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(confirmadas.Count == 0 ? 0 : confirmadas.Average(d => d.ValorDoacao))</span></div>
+        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t?.Confirmadas ?? 0)</span><span class="small muted">@Formatos.Numero(naoConfirmadas) em confirmação ou não @(naoConfirmadas == 1 ? "concluída" : "concluídas")</span></div>
+        <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(t?.DoadoresUnicos ?? 0)</span></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(t?.TicketMedio ?? 0)</span></div>
     </div>
     <section class="card t-card">
-        <div class="card-head"><h2>Doações</h2><span class="muted small">@Math.Min(25, _doacoes?.Count ?? 0) mais recentes de @Formatos.Numero(_doacoes?.Count ?? 0)</span></div>
+        <div class="card-head"><h2>Doações</h2><span class="muted small">@Formatos.Numero(_doacoes?.Total ?? 0) no total</span></div>
         <div class="tscroll">
             <table class="table rtable" style="min-width:680px">
                 <thead><tr><th>Doador</th><th>Data</th><th class="num">Valor</th><th>Situação</th></tr></thead>
                 <tbody>
-                    @foreach (var d in (_doacoes ?? []).Take(25))
+                    @foreach (var d in _doacoes?.Itens ?? [])
                     {
                         <tr>
-                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div><b>@d.NomeDoador</b></div></div></td>
+                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div class="corta"><b title="@d.NomeDoador">@d.NomeDoador</b></div></div></td>
                             <td class="tnum small" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
                             <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
                             <td><SeloDoacao Status="@d.Status" /></td>
                         </tr>
                     }
-                    @if (_doacoes is { Count: 0 })
+                    @if (_doacoes is { Total: 0 })
                     {
                         <tr><td colspan="4" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhuma doação ainda" Tamanho="100" Classe="state-sm" /></td></tr>
                     }
                 </tbody>
             </table>
         </div>
+        <Paginador Pagina="_pagina" Total="_doacoes?.Total ?? 0" Tamanho="PorPagina" AoMudar="IrParaAsync" />
     </section>
     <Confirmacao Aberta="@(_pergunta is not null)" Ocupado="_salvando"
                  Titulo="@(_pergunta == "Concluida" ? "Concluir esta campanha?" : "Cancelar esta campanha?")"
@@ -79,7 +81,9 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private Campanha? _campanha;
-    private List<DoacaoGestao>? _doacoes;
+    private const int PorPagina = 15;
+    private DoacoesGestaoPagina? _doacoes;
+    private int _pagina = 1;
     private bool _naoEncontrada, _salvando;
     private string? _pergunta;
     private readonly CancellationTokenSource _cts = new();
@@ -93,12 +97,18 @@ else
     private async Task CarregarAsync()
     {
         var c = Api.CampanhaAsync(Id);
-        var d = Api.DoacoesGestaoAsync(Id, limite: 500);
+        var d = Api.DoacoesGestaoAsync(Id, pagina: _pagina, tamanho: PorPagina);
         var rc = await c;
         if (!rc.Ok) { _naoEncontrada = rc.Problema!.Status == 404; return; }
         _campanha = rc.Valor;
         var rd = await d;
         if (rd.Ok) _doacoes = rd.Valor;
+    }
+
+    private async Task IrParaAsync(int pagina)
+    {
+        _pagina = pagina;
+        await CarregarAsync();
     }
 
     private void Perguntar(string status) => _pergunta = status;

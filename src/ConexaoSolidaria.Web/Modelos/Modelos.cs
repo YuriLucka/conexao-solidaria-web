@@ -36,6 +36,17 @@ public record DoadorGestao(
     Guid Id, string NomeCompleto, string Email, string CpfMascarado, DateTime CriadoEm,
     int QuantidadeDoacoes, decimal TotalDoado, DateTime? UltimaDoacaoEm);
 
+// Listas paginadas: Total é a quantidade com os filtros (todas as páginas); os totais/indicadores valem para o conjunto inteiro.
+public record TotaisDoacoes(decimal TotalConfirmado, int Confirmadas, int Pendentes, int Rejeitadas, int DoadoresUnicos, decimal TicketMedio);
+public record DoacoesGestaoPagina(IReadOnlyList<DoacaoGestao> Itens, int Total, int Pagina, int Tamanho, TotaisDoacoes Totais);
+
+public record IndicadoresDoadores(int Cadastrados, int DoaramUltimos30Dias, int Recorrentes, int NovosUltimos30Dias);
+public record DoadoresGestaoPagina(IReadOnlyList<DoadorGestao> Itens, int Total, int Pagina, int Tamanho, IndicadoresDoadores Indicadores);
+
+public record ApoioCampanha(Guid IdCampanha, string TituloCampanha, string? Capa, string? Categoria, decimal Valor);
+public record ResumoDoador(decimal TotalDoado, int Confirmadas, int CampanhasApoiadas, int Pendentes, IReadOnlyList<ApoioCampanha> PorCampanha);
+public record MinhasDoacoesPagina(IReadOnlyList<Doacao> Itens, int Total, int Pagina, int Tamanho, ResumoDoador Resumo);
+
 public record ArrecadacaoDia(DateOnly Dia, decimal Valor, int Doacoes);
 public record ResumoGestao(
     int Dias, decimal Arrecadado, decimal ArrecadadoPeriodoAnterior, int DoacoesConfirmadas, int DoacoesConfirmadasPeriodoAnterior,

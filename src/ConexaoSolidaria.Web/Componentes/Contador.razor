@@ -1,0 +1,23 @@
+@* Número de impacto que conta de 0 até o valor na primeira vez que aparece (painel de transparência).
+   O texto final já sai renderizado; a animação só troca o texto temporariamente (cs.contar no app.js). *@
+@inject IJSRuntime Js
+
+<span @ref="_el" class="@Classe" data-teste="@Teste">@Texto</span>
+
+@code {
+    [Parameter, EditorRequired] public decimal Valor { get; set; }
+    [Parameter, EditorRequired] public string Texto { get; set; } = "";
+    [Parameter] public bool Moeda { get; set; }
+    [Parameter] public string? Classe { get; set; }
+    [Parameter] public string? Teste { get; set; }
+
+    private ElementReference _el;
+    private bool _animado;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_animado || Valor <= 0) return;
+        _animado = true;
+        await Js.InvokeVoidAsync("cs.contar", _el, Valor, Moeda);
+    }
+}

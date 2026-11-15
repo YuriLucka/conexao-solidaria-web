@@ -1,6 +1,7 @@
 @page "/gestao/doadores"
 @layout GestaoLayout
 @attribute [Authorize(Roles = "GestorONG")]
+@implements IDisposable
 @inject Api Api
 
 <PageTitle>Doadores · Gestão · Conexão Solidária</PageTitle>
@@ -9,82 +10,91 @@
     <div><span class="eyebrow">Gestão</span><h1>Doadores</h1><p>Pessoas cadastradas para doar. Por privacidade, o CPF aparece parcialmente oculto.</p></div>
 </div>
 
-@if (_erro is not null)
+@if (_erro is not null && _dados is null)
 {
     <Estado Expressao="preocupado" Titulo="Não conseguimos carregar os doadores" Texto="@_erro">
         <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
     </Estado>
 }
-else if (_todos is null)
+else if (_dados is null)
 {
     <Carregando Texto="Buscando os doadores" />
 }
 else
 {
-    var mes = DateTime.UtcNow.AddDays(-30);
-    var lista = Filtrados.ToList();
-    var paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
-    var pagina = Math.Min(_pagina, paginas);
+    var ind = _dados.Indicadores;
     <div class="tiles">
-        <div class="tile"><span class="lbl">Doadores cadastrados</span><span class="val">@Formatos.Numero(_todos.Count)</span></div>
-        <div class="tile"><span class="lbl">Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.UltimaDoacaoEm >= mes))</span></div>
-        <div class="tile"><span class="lbl">Recorrentes (2 ou mais doações)</span><span class="val">@Formatos.Numero(_todos.Count(d => d.QuantidadeDoacoes >= 2))</span></div>
-        <div class="tile"><span class="lbl">Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.CriadoEm >= mes))</span></div>
+        <div class="tile"><span class="lbl">Doadores cadastrados</span><span class="val">@Formatos.Numero(ind.Cadastrados)</span></div>
+        <div class="tile"><span class="lbl">Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.DoaramUltimos30Dias)</span></div>
+        <div class="tile"><span class="lbl">Recorrentes (2 ou mais doações)</span><span class="val">@Formatos.Numero(ind.Recorrentes)</span></div>
+        <div class="tile"><span class="lbl">Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.NovosUltimos30Dias)</span></div>
     </div>
     <div class="toolbar">
-        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar doadores" @bind="_busca" @bind:event="oninput" @bind:after="() => _pagina = 1" /></div>
-        <span class="muted small">@Formatos.Numero(lista.Count) @(lista.Count == 1 ? "resultado" : "resultados")</span>
+        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar doadores" @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync" /></div>
+        <span class="muted small">@Formatos.Numero(_dados.Total) @(_dados.Total == 1 ? "resultado" : "resultados")</span>
     </div>
     <div class="card t-card">
         <div class="tscroll">
             <table class="table rtable" style="min-width:820px">
                 <thead><tr><th>Doador</th><th>CPF</th><th>Cadastro</th><th class="num">Doações</th><th class="num">Total doado</th><th>Última doação</th></tr></thead>
                 <tbody>
-                    @foreach (var d in lista.Skip((pagina - 1) * PorPagina).Take(PorPagina))
+                    @foreach (var d in _dados.Itens)
                     {
                         <tr>
-                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeCompleto" /><div><b>@d.NomeCompleto</b><small>@d.Email</small></div></div></td>
+                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeCompleto" /><div class="corta"><b title="@d.NomeCompleto">@d.NomeCompleto</b><small title="@d.Email">@d.Email</small></div></div></td>
                             <td class="tnum small" data-label="CPF">@d.CpfMascarado</td>
                             <td class="tnum small end" data-label="Cadastro">@Formatos.Data(d.CriadoEm)</td>
-                            <td class="num" data-label="Doações">@d.QuantidadeDoacoes</td>
+                            <td class="num" data-label="Doações">@Formatos.Numero(d.QuantidadeDoacoes)</td>
                             <td class="num end" data-label="Total doado"><b>@Formatos.Dinheiro(d.TotalDoado)</b></td>
                             <td class="small muted" data-label="Última doação">@(d.UltimaDoacaoEm is DateTime u ? Formatos.Ha(u) : "—")</td>
                         </tr>
                     }
-                    @if (lista.Count == 0)
+                    @if (_dados.Itens.Count == 0)
                     {
-                        <tr><td colspan="6" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhum doador encontrado" Texto="Tente outra busca." Tamanho="100" Classe="state-sm" /></td></tr>
+                        <tr><td colspan="6" class="empty-cell full"><Estado Expressao="espiando" Titulo="@(ind.Cadastrados == 0 ? "Nenhum doador cadastrado ainda" : "Nenhum doador encontrado")" Texto="@(ind.Cadastrados == 0 ? "Os doadores aparecem aqui assim que criarem a conta no site." : "Tente outra busca.")" Tamanho="100" Classe="state-sm" /></td></tr>
                     }
                 </tbody>
             </table>
         </div>
-        <div class="pager">
-            <span>Página @pagina de @paginas</span>
-            <div class="row">
-                <button class="btn btn-ghost btn-sm" disabled="@(pagina <= 1)" @onclick="() => _pagina = pagina - 1"><Icone Nome="left" Tamanho="15" />Anterior</button>
-                <button class="btn btn-ghost btn-sm" disabled="@(pagina >= paginas)" @onclick="() => _pagina = pagina + 1">Próxima<Icone Nome="right" Tamanho="15" /></button>
-            </div>
-        </div>
+        <Paginador Pagina="_dados.Pagina" Total="_dados.Total" Tamanho="PorPagina" Ocupado="_carregando" AoMudar="IrParaAsync" />
     </div>
 }
 
 @code {
     private const int PorPagina = 15;
-    private List<DoadorGestao>? _todos;
+    private DoadoresGestaoPagina? _dados;
     private string _busca = "";
     private int _pagina = 1;
+    private bool _carregando;
     private string? _erro;
-
-    private IEnumerable<DoadorGestao> Filtrados => (_todos ?? []).Where(d => _busca.Trim() is ""
-        || d.NomeCompleto.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase)
-        || d.Email.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase));
+    private CancellationTokenSource? _digitacao;
 
     protected override Task OnInitializedAsync() => CarregarAsync();
 
     private async Task CarregarAsync()
     {
-        var r = await Api.DoadoresAsync();
-        if (r.Ok) (_todos, _erro) = (r.Valor, null);
+        _carregando = true;
+        var r = await Api.DoadoresAsync(_busca, _pagina, PorPagina);
+        _carregando = false;
+        if (r.Ok) (_dados, _erro) = (r.Valor, null);
         else _erro = r.Problema!.Mensagem;
     }
+
+    private async Task IrParaAsync(int pagina)
+    {
+        _pagina = pagina;
+        await CarregarAsync();
+    }
+
+    // Espera a pessoa parar de digitar (300 ms) antes de buscar no servidor.
+    private async Task BuscarAsync()
+    {
+        _digitacao?.Cancel();
+        _digitacao = new CancellationTokenSource();
+        try { await Task.Delay(300, _digitacao.Token); }
+        catch (TaskCanceledException) { return; }
+        await IrParaAsync(1);
+    }
+
+    public void Dispose() => _digitacao?.Cancel();
 }

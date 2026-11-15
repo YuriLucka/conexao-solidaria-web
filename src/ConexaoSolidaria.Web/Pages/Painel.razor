@@ -18,7 +18,7 @@
         </div>
         <div class="card hero-fig">
             <div class="lbl-top"><span class="muted small">Arrecadado nas campanhas ativas</span></div>
-            <div class="big tnum" data-teste="total-arrecadado">@Formatos.DinheiroInteiro(Total)</div>
+            <div class="big tnum"><Contador Valor="Total" Moeda="true" Texto="@Formatos.DinheiroInteiro(Total)" Teste="total-arrecadado" /></div>
             <div class="sub">de @Formatos.DinheiroInteiro(SomaMetas) somando as metas · @Formatos.Porcentagem(Formatos.Progresso(Total, SomaMetas))</div>
             <div style="margin-top:8px">
                 <span class="live"><i></i><span>@(_atualizadoEm is null ? "Carregando…" : $"Atualizado {Formatos.Ha(_atualizadoEm.Value)}")</span></span>
@@ -54,22 +54,50 @@
     }
     else
     {
+        var categorias = _ativas.Where(c => c.Categoria is not null).Select(c => c.Categoria!).Distinct().Order().ToList();
+        var filtradas = _ativas.Where(c => _categoria == "" || c.Categoria == _categoria).ToList();
+        @if (categorias.Count > 1)
+        {
+            <div class="chips painel-filtro" role="group" aria-label="Filtrar campanhas por categoria">
+                <button class="chip @(_categoria == "" ? "on" : "")" aria-pressed="@(_categoria == "" ? "true" : "false")" @onclick="() => Filtrar(string.Empty)">Todas <span>@Formatos.Numero(_ativas.Count)</span></button>
+                @foreach (var cat in categorias)
+                {
+                    <button class="chip @(_categoria == cat ? "on" : "")" aria-pressed="@(_categoria == cat ? "true" : "false")" @onclick="() => Filtrar(cat)">@cat <span>@Formatos.Numero(_ativas.Count(c => c.Categoria == cat))</span></button>
+                }
+            </div>
+        }
         <div class="grid-cards">
-            @foreach (var c in _ativas)
+            @foreach (var c in filtradas.Take(_visiveis))
             {
                 <CardCampanha @key="c.Id" Id="c.Id" Titulo="@c.Titulo" Descricao="@c.Descricao" Meta="c.MetaFinanceira"
                               Arrecadado="c.ValorTotalArrecadado" DataFim="c.DataFim" PrazoEncerrado="c.PrazoEncerrado"
                               Categoria="@c.Categoria" CapaId="@c.Capa" />
             }
         </div>
+        @if (filtradas.Count > _visiveis)
+        {
+            <div class="mais-campanhas">
+                <button class="btn btn-ghost" @onclick="() => _visiveis += PorVez">Mostrar mais campanhas <span class="muted">(@Formatos.Numero(filtradas.Count - _visiveis) restantes)</span></button>
+            </div>
+        }
     }
 </section>
 
 @code {
+    // Com muitas campanhas, o painel mostra 12 por vez (mais leve no celular e na atualização a cada 5 s).
+    private const int PorVez = 12;
+    private int _visiveis = PorVez;
+    private string _categoria = "";
     private List<CampanhaAtiva>? _ativas;
     private string? _erro;
     private DateTime? _atualizadoEm;
     private readonly CancellationTokenSource _cts = new();
+
+    private void Filtrar(string categoria)
+    {
+        _categoria = categoria;
+        _visiveis = PorVez;
+    }
 
     private decimal Total => _ativas?.Sum(c => c.ValorTotalArrecadado) ?? 0;
     private decimal SomaMetas => _ativas?.Sum(c => c.MetaFinanceira) ?? 0;

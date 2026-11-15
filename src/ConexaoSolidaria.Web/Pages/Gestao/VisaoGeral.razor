@@ -54,13 +54,19 @@ else
                 <GraficoBarras Dias="r.PorDia" />
             </section>
             <section class="card">
-                <div class="card-head"><h2>Campanhas ativas</h2><a href="gestao/campanhas" class="small">Ver todas</a></div>
+                <div class="card-head"><h2>Campanhas ativas</h2><a href="gestao/campanhas" class="small">@(ativas.Count > MaxNaLista ? $"Ver todas ({Formatos.Numero(ativas.Count)})" : "Ver todas")</a></div>
                 <div class="prog-list">
-                    @foreach (var c in ativas)
+                    @if (ativas.Count == 0)
+                    {
+                        <Estado Expressao="espiando" Titulo="Nenhuma campanha ativa" Texto="Crie a primeira campanha para começar a receber doações." Tamanho="100" Classe="state-sm">
+                            <a class="btn btn-primary btn-sm" href="gestao/campanhas/nova"><Icone Nome="plus" Tamanho="15" />Nova campanha</a>
+                        </Estado>
+                    }
+                    @foreach (var c in ativas.Take(MaxNaLista))
                     {
                         var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
                         <div class="prog-item">
-                            <div class="top"><a href="gestao/campanhas/@c.Id">@c.Titulo</a><b class="tnum small">@Formatos.Porcentagem(p)</b></div>
+                            <div class="top"><a class="corta" href="gestao/campanhas/@c.Id" title="@c.Titulo">@c.Titulo</a><b class="tnum small">@Formatos.Porcentagem(p)</b></div>
                             <Medidor Progresso="p" Classe="thin" />
                             <div class="meta"><span class="tnum">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado) de @Formatos.DinheiroInteiro(c.MetaFinanceira)</span><span>@Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</span></div>
                         </div>
@@ -73,18 +79,18 @@ else
                 <div class="card-head"><h2>Hoje</h2><span class="live"><i></i>ao vivo</span></div>
                 <div class="row" style="gap:22px;align-items:flex-start">
                     <div><span class="qcount tnum">@Formatos.DinheiroInteiro(r.ArrecadadoHoje)</span><span class="muted small">arrecadados</span></div>
-                    <div><span class="qcount tnum">@r.DoacoesHoje</span><span class="muted small">doações</span></div>
-                    <div><span class="qcount tnum">@r.DoacoesPendentes</span><span class="muted small">em confirmação</span></div>
+                    <div><span class="qcount tnum">@Formatos.Numero(r.DoacoesHoje)</span><span class="muted small">@(r.DoacoesHoje == 1 ? "doação" : "doações")</span></div>
+                    <div><span class="qcount tnum">@Formatos.Numero(r.DoacoesPendentes)</span><span class="muted small">em confirmação</span></div>
                 </div>
             </section>
             @if (Alertas(ativas) is { Count: > 0 } alertas)
             {
                 <section class="card">
-                    <div class="card-head"><h2>Atenção</h2></div>
+                    <div class="card-head"><h2>Atenção</h2>@if (alertas.Count > MaxNaLista) { <a href="gestao/campanhas" class="small">mais @Formatos.Numero(alertas.Count - MaxNaLista)</a> }</div>
                     <div class="alert-list">
-                        @foreach (var (tipo, campanha, texto) in alertas)
+                        @foreach (var (tipo, campanha, texto) in alertas.Take(MaxNaLista))
                         {
-                            <div class="notice @tipo"><Icone Nome="@(tipo == "ok" ? "trend" : "alert")" Tamanho="17" /><div><b>@campanha.Titulo</b> @texto <a href="gestao/campanhas/@campanha.Id">Abrir</a></div></div>
+                            <div class="notice @tipo"><Icone Nome="@(tipo == "ok" ? "trend" : "alert")" Tamanho="17" /><div><b class="corta-2" title="@campanha.Titulo">@campanha.Titulo</b> @texto <a href="gestao/campanhas/@campanha.Id">Abrir</a></div></div>
                         }
                     </div>
                 </section>
@@ -137,13 +143,13 @@ else
         var dias = _dias;
         var resumo = Api.ResumoAsync(dias);
         var campanhas = Api.CampanhasAsync();
-        var recentes = Api.DoacoesGestaoAsync(limite: 8);
+        var recentes = Api.DoacoesGestaoAsync(tamanho: 8);
         var (r, c, d) = (await resumo, await campanhas, await recentes);
         // A pessoa trocou o período enquanto esta busca estava a caminho: a resposta é de outro período.
         if (dias != _dias) return;
         var falha = new[] { r.Problema, c.Problema, d.Problema }.FirstOrDefault(p => p is not null);
         if (falha is not null) { if (_resumo is null) _erro = falha.Mensagem; return; }
-        (_resumo, _campanhas, _recentes, _erro) = (r.Valor, c.Valor, d.Valor, null);
+        (_resumo, _campanhas, _recentes, _erro) = (r.Valor, c.Valor, d.Valor!.Itens.ToList(), null);
     }
 
     // "Ao vivo": atualiza a cada 5 s.
@@ -162,6 +168,9 @@ else
     }
 
     // Mesmas regras do protótipo: termina em até 14 dias sem bater a meta; passou de 90%.
+    // Com muitas campanhas, os cartões mostram só as primeiras (ordenadas pelo prazo); o restante fica em "Ver todas".
+    private const int MaxNaLista = 6;
+
     private static List<(string, Campanha, string)> Alertas(List<Campanha> ativas)
     {
         var lista = new List<(string, Campanha, string)>();

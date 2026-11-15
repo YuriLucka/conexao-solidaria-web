@@ -1,0 +1,23 @@
+@* Rodapé de lista paginada no servidor: "Página X de Y" e Anterior/Próxima. Some quando há uma página só. *@
+@if (Paginas > 1)
+{
+    <div class="pager">
+        <span>Página @Formatos.Numero(Pagina) de @Formatos.Numero(Paginas)</span>
+        <div class="row">
+            <button class="btn btn-ghost btn-sm" disabled="@(Pagina <= 1 || Ocupado)" @onclick="() => Ir(Pagina - 1)"><Icone Nome="left" Tamanho="15" />Anterior</button>
+            <button class="btn btn-ghost btn-sm" disabled="@(Pagina >= Paginas || Ocupado)" @onclick="() => Ir(Pagina + 1)">Próxima<Icone Nome="right" Tamanho="15" /></button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Pagina { get; set; } = 1;
+    [Parameter] public int Total { get; set; }
+    [Parameter] public int Tamanho { get; set; } = 20;
+    [Parameter] public bool Ocupado { get; set; }
+    [Parameter] public EventCallback<int> AoMudar { get; set; }
+
+    private int Paginas => Math.Max(1, (int)Math.Ceiling(Total / (double)Math.Max(1, Tamanho)));
+
+    private Task Ir(int pagina) => AoMudar.InvokeAsync(Math.Clamp(pagina, 1, Paginas));
+}

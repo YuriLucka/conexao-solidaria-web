@@ -33,6 +33,7 @@ else
     var c = _campanha;
     var progresso = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
     var aceita = c.Status == "Ativa" && !c.PrazoEncerrado;
+    var longa = c.Descricao.Length > LimiteDescricao;
     <div class="wrap section">
         <a href="" class="back"><Icone Nome="left" Tamanho="16" />Campanhas</a>
         <div class="camp-layout">
@@ -43,9 +44,15 @@ else
                     <span class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</span>
                 </div>
                 <h1>@c.Titulo</h1>
-                @foreach (var paragrafo in c.Descricao.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                <div class="descricao @(longa && !_descricaoAberta ? "recolhida" : "")" id="descricao">
+                    @foreach (var paragrafo in c.Descricao.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p class="lead">@paragrafo</p>
+                    }
+                </div>
+                @if (longa)
                 {
-                    <p class="lead">@paragrafo</p>
+                    <button class="btn btn-quiet btn-sm ler-mais" aria-controls="descricao" aria-expanded="@(_descricaoAberta ? "true" : "false")" @onclick="() => _descricaoAberta = !_descricaoAberta">@(_descricaoAberta ? "Mostrar menos" : "Ler descrição completa")</button>
                 }
                 <dl class="facts">
                     <div><dt>Início</dt><dd>@Formatos.Data(c.DataInicio)</dd></div>
@@ -100,6 +107,9 @@ else
 
     private Campanha? _campanha;
     private DoacoesDaCampanha? _doacoes;
+    // Descrições longas (até 4.000 caracteres) começam recolhidas, para o cartão de doar não ficar lá embaixo no celular.
+    private const int LimiteDescricao = 600;
+    private bool _descricaoAberta;
     private bool _naoEncontrada;
     private string? _erro;
     private readonly CancellationTokenSource _cts = new();

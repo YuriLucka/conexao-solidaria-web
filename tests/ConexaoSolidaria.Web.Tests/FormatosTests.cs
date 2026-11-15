@@ -62,7 +62,8 @@ public class FormatosTests
     public void Prazo_mostra_os_estados_da_campanha()
     {
         Assert.Equal("Cancelada", Formatos.Prazo("Cancelada", DateTime.UtcNow.AddDays(5), false));
-        Assert.Equal("Prazo encerrado", Formatos.Prazo("Ativa", DateTime.UtcNow.AddDays(-1), true));
+        var ontem = DateTime.UtcNow.AddDays(-1);
+        Assert.Equal($"Terminou em {Formatos.Data(ontem)}", Formatos.Prazo("Ativa", ontem, true));
         Assert.Equal("Termina amanhã", Formatos.Prazo("Ativa", DateTime.UtcNow.AddHours(20), false));
         Assert.Equal("Faltam 10 dias", Formatos.Prazo("Ativa", DateTime.UtcNow.AddDays(9.5), false));
     }

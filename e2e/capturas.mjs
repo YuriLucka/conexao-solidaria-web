@@ -30,6 +30,7 @@ const telas = [
   { nome: 'minhas-doacoes', rota: '/minhas-doacoes', perfil: 'doador', espera: 'h1' },
   { nome: 'gestao', rota: '/gestao', perfil: 'gestor', espera: 'h1' },
   { nome: 'gestao-campanhas', rota: '/gestao/campanhas', perfil: 'gestor', espera: 'h1' },
+  { nome: 'gestao-campanha', rota: 'PRIMEIRA_CAMPANHA_GESTAO', perfil: 'gestor', espera: '.tiles' },
   { nome: 'gestao-nova', rota: '/gestao/campanhas/nova', perfil: 'gestor', espera: 'form' },
   { nome: 'gestao-doadores', rota: '/gestao/doadores', perfil: 'gestor', espera: 'h1' },
   { nome: 'gestao-doacoes', rota: '/gestao/doacoes', perfil: 'gestor', espera: 'h1' },
@@ -52,13 +53,14 @@ async function entrar(page, perfil) {
 
 const problemas = [];
 let primeiraCampanha = null;
+let primeiraGestao = null;
 
 for (const ap of aparelhos) {
   const browser = await ap.motor.launch();
   for (const perfil of [null, 'doador', 'gestor']) {
     const daVez = telas.filter(t => t.perfil === perfil);
     if (daVez.length === 0) continue;
-    const ctx = await browser.newContext({ ...ap.opcoes, locale: 'pt-BR' });
+    const ctx = await browser.newContext({ ...ap.opcoes, locale: 'pt-BR', reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     const erros = [];
     page.on('console', m => { if (m.type() === 'error') erros.push(m.text()); });
@@ -72,7 +74,14 @@ for (const ap of aparelhos) {
         await page.waitForSelector('.camp-card h3 a');
         primeiraCampanha = new URL(await page.getAttribute('.camp-card h3 a', 'href'), `${base}/`).pathname;
       }
-      const rota = t.rota === 'PRIMEIRA_CAMPANHA' ? primeiraCampanha : t.rota;
+      if (t.rota === 'PRIMEIRA_CAMPANHA_GESTAO' && !primeiraGestao) {
+        await page.goto(`${base}/gestao/campanhas`);
+        try {
+          await page.waitForSelector('td a[href^="gestao/campanhas/"]', { timeout: 15000 });
+          primeiraGestao = '/' + await page.getAttribute('td a[href^="gestao/campanhas/"]', 'href');
+        } catch { primeiraGestao = '/gestao/campanhas'; }
+      }
+      const rota = t.rota === 'PRIMEIRA_CAMPANHA' ? primeiraCampanha : t.rota === 'PRIMEIRA_CAMPANHA_GESTAO' ? primeiraGestao : t.rota;
       await page.goto(`${base}${rota}`);
       // Uma nova tentativa antes de acusar: com a máquina carregada (Docker + 5 navegadores),
       // o WebKit às vezes demora mais que o limite para iniciar o WebAssembly.
@@ -86,6 +95,21 @@ for (const ap of aparelhos) {
 
       const largura = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, tela: window.innerWidth }));
       if (largura.doc > largura.tela + 1) problemas.push(`${ap.nome}/${t.nome}: rolagem horizontal (${largura.doc}px > ${largura.tela}px)`);
+
+      // Elementos visíveis que passam da borda direita da tela, fora de áreas com rolagem própria (tabelas).
+      const vazando = await page.evaluate(() => {
+        const tela = window.innerWidth, achados = [];
+        const rolavel = el => { for (let p = el.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') return true; } return false; };
+        for (const el of document.querySelectorAll('body *')) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0 || r.right <= tela + 1) continue;
+          if (getComputedStyle(el).position === 'fixed' || rolavel(el)) continue;
+          achados.push(`${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''} (${Math.round(r.right)}px)`);
+          if (achados.length >= 3) break;
+        }
+        return achados;
+      });
+      for (const v of vazando) problemas.push(`${ap.nome}/${t.nome}: elemento passa da tela: ${v}`);
       for (const e of erros) problemas.push(`${ap.nome}/${t.nome}: console: ${e.slice(0, 160)}`);
 
       await page.screenshot({ path: `${pasta}${ap.nome}-${t.nome}.png`, fullPage: true });
