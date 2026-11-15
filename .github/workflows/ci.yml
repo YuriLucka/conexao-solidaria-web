@@ -1,0 +1,53 @@
+name: ci
+
+# A cada push na branch principal: build, testes (xUnit + bUnit) e imagem Docker do site no GHCR.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  # Nome da imagem precisa ser minúsculo (o dono do repositório é YuriLucka).
+  IMAGE: ghcr.io/yurilucka/conexao-solidaria-web
+
+jobs:
+  build-test-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Web.slnx
+
+      - name: Build
+        run: dotnet build Web.slnx -c Release --no-restore
+
+      - name: Testes
+        run: dotnet test Web.slnx -c Release --no-build --logger "trx;LogFileName=resultado.trx"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Imagem Docker (build e push no GHCR)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

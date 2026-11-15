@@ -1,0 +1,80 @@
+using ConexaoSolidaria.Web.Marca;
+
+namespace ConexaoSolidaria.Web.Tests;
+
+public class FormatosTests
+{
+    [Theory]
+    [InlineData(1234.5, "R$ 1.234,50")]
+    [InlineData(0, "R$ 0,00")]
+    [InlineData(47398.22, "R$ 47.398,22")]
+    public void Dinheiro_no_formato_brasileiro(decimal valor, string esperado)
+        => Assert.Equal(esperado, Formatos.Dinheiro(valor));
+
+    [Fact]
+    public void Dinheiro_inteiro_arredonda()
+        => Assert.Equal("R$ 60.000", Formatos.DinheiroInteiro(59999.5m));
+
+    [Theory]
+    [InlineData("52998224725", "529.982.247-25")]
+    [InlineData("5299", "529.9")]
+    [InlineData("529.982.2", "529.982.2")]
+    [InlineData("abc529982247259999", "529.982.247-25")]
+    public void Mascara_de_cpf_enquanto_digita(string entrada, string esperado)
+        => Assert.Equal(esperado, Formatos.MascaraCpf(entrada));
+
+    [Theory]
+    [InlineData("529.982.247-25", true)]
+    [InlineData("111.444.777-35", true)]
+    [InlineData("529.982.247-24", false)]
+    [InlineData("111.111.111-11", false)]
+    [InlineData("123", false)]
+    public void Cpf_valido_pelos_digitos_verificadores(string cpf, bool valido)
+        => Assert.Equal(valido, Formatos.CpfValido(cpf));
+
+    [Theory]
+    [InlineData("1.234,56", 1234.56)]
+    [InlineData("R$ 50", 50)]
+    [InlineData("37,5", 37.5)]
+    [InlineData("1.500", 1500)]
+    [InlineData("10.5", 10.5)]
+    public void Le_valor_digitado(string texto, double esperado)
+        => Assert.Equal((decimal)esperado, Formatos.LerDinheiro(texto));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("abc")]
+    public void Texto_sem_numero_nao_vira_valor(string texto)
+        => Assert.Null(Formatos.LerDinheiro(texto));
+
+    [Theory]
+    [InlineData("15112026", "15/11/2026")]
+    [InlineData("1511", "15/11")]
+    [InlineData("15/11/2026", "15/11/2026")]
+    public void Mascara_de_data(string entrada, string esperado)
+        => Assert.Equal(esperado, Formatos.MascaraData(entrada));
+
+    [Fact]
+    public void Datas_aparecem_no_horario_de_Brasilia()
+        => Assert.Equal("14/11/2026 22:30", Formatos.DataHora(new DateTime(2026, 11, 15, 1, 30, 0, DateTimeKind.Utc)));
+
+    [Fact]
+    public void Prazo_mostra_os_estados_da_campanha()
+    {
+        Assert.Equal("Cancelada", Formatos.Prazo("Cancelada", DateTime.UtcNow.AddDays(5), false));
+        Assert.Equal("Prazo encerrado", Formatos.Prazo("Ativa", DateTime.UtcNow.AddDays(-1), true));
+        Assert.Equal("Termina amanhã", Formatos.Prazo("Ativa", DateTime.UtcNow.AddHours(20), false));
+        Assert.Equal("Faltam 10 dias", Formatos.Prazo("Ativa", DateTime.UtcNow.AddDays(9.5), false));
+    }
+
+    [Theory]
+    [InlineData("Mariana Albuquerque", "MA")]
+    [InlineData("Helena", "H")]
+    [InlineData("Paulo Roberto Souza", "PS")]
+    public void Iniciais_do_avatar(string nome, string esperado)
+        => Assert.Equal(esperado, Formatos.Iniciais(nome));
+
+    [Fact]
+    public void Progresso_sem_meta_e_zero()
+        => Assert.Equal(0, Formatos.Progresso(100, 0));
+}
