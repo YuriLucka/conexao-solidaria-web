@@ -134,10 +134,13 @@ else
 
     private async Task CarregarAsync()
     {
-        var resumo = Api.ResumoAsync(_dias);
+        var dias = _dias;
+        var resumo = Api.ResumoAsync(dias);
         var campanhas = Api.CampanhasAsync();
         var recentes = Api.DoacoesGestaoAsync(limite: 8);
         var (r, c, d) = (await resumo, await campanhas, await recentes);
+        // A pessoa trocou o período enquanto esta busca estava a caminho: a resposta é de outro período.
+        if (dias != _dias) return;
         var falha = new[] { r.Problema, c.Problema, d.Problema }.FirstOrDefault(p => p is not null);
         if (falha is not null) { if (_resumo is null) _erro = falha.Mensagem; return; }
         (_resumo, _campanhas, _recentes, _erro) = (r.Valor, c.Valor, d.Valor, null);

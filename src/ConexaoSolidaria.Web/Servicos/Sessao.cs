@@ -16,6 +16,7 @@ public class Sessao : AuthenticationStateProvider
 
     private readonly IJSRuntime _js;
     private bool _carregada;
+    private Timer? _expiracao;
 
     public Sessao(IJSRuntime js) => _js = js;
 
@@ -58,6 +59,7 @@ public class Sessao : AuthenticationStateProvider
     {
         Token = Nome = Perfil = null;
         UsuarioId = null;
+        _expiracao?.Dispose();
         await _js.InvokeVoidAsync("cs.apagar", Chave);
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
@@ -82,6 +84,12 @@ public class Sessao : AuthenticationStateProvider
         Perfil = t.Perfil;
         ExpiraEm = t.ExpiraEm;
         UsuarioId = LerSub(t.AccessToken);
+
+        // No vencimento do token a interface volta para "anônimo" sem esperar o próximo 401.
+        _expiracao?.Dispose();
+        var falta = ExpiraEm - DateTime.UtcNow;
+        if (falta > TimeSpan.Zero && falta < TimeSpan.FromDays(20))
+            _expiracao = new Timer(_ => NotifyAuthenticationStateChanged(GetAuthenticationStateAsync()), null, falta + TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan);
     }
 
     // Lê a claim "sub" do payload do JWT (base64url). Sem validar assinatura: quem valida é a API.

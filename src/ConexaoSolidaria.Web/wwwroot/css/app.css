@@ -42,3 +42,33 @@ a { color: var(--verde-texto); }
 .av0 { color: var(--verde-texto); }
 .av1 { color: var(--coral-texto); }
 .cta-band p, .auth-art p { opacity: 1; }
+
+/* Fotos de fundo (wwwroot/img/fotos). Sem o arquivo, o visual volta ao do protótipo (só a cor). */
+/* Login: foto atrás do painel verde, com véu da cor da marca para o texto manter o contraste AA. */
+.auth-art.com-foto {
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--verde-forte) 84%, transparent), color-mix(in srgb, var(--verde-forte) 94%, transparent)),
+    var(--verde) url("../img/fotos/login.webp") center / cover no-repeat;
+}
+.auth-art.com-foto .art-symbol { opacity: .1; }
+/* No tema escuro o verde da marca é claro e lavaria a foto: o véu usa o verde-escuro, com texto branco. */
+:root[data-cs-tema="escuro"] .auth-art.com-foto { --verde-forte: #0A5E4D; --on-verde: #FFFFFF; color: #FFFFFF; }
+
+/* Topo do painel: foto à direita, que some no fundo da página do lado do texto. */
+.hero.com-foto {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(90deg, var(--bg) 0 40%, color-mix(in srgb, var(--bg) 55%, transparent) 68%, color-mix(in srgb, var(--bg) 15%, transparent)),
+    url("../img/fotos/painel.webp") right 30% / cover no-repeat;
+}
+@media (max-width: 900px) {
+  /* Celular: a foto vira uma faixa no alto que se funde ao fundo antes do título. */
+  .hero.com-foto {
+    padding-top: 150px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 10%, transparent) 0, color-mix(in srgb, var(--bg) 45%, transparent) 110px, var(--bg) 210px),
+      url("../img/fotos/painel.webp") center top / 100% auto no-repeat,
+      var(--bg);
+  }
+}

@@ -107,13 +107,14 @@ else
     private async Task MudarStatusAsync()
     {
         var c = _campanha!;
+        var novo = _pergunta;
         _salvando = true;
         var r = await Api.AtualizarCampanhaAsync(c.Id, new SalvarCampanhaRequest(c.Titulo, c.Descricao, c.DataInicio, c.DataFim,
-            c.MetaFinanceira, _pergunta, c.Categoria, c.Capa, c.CriancasAtendidas));
+            c.MetaFinanceira, novo, c.Categoria, c.Capa, c.CriancasAtendidas));
         _salvando = false;
         if (r.Ok)
         {
-            Avisos.Ok(_pergunta == "Concluida" ? "Campanha concluída." : "Campanha cancelada.");
+            Avisos.Ok(novo == "Concluida" ? "Campanha concluída." : "Campanha cancelada.");
             _campanha = r.Valor;
         }
         else Avisos.Erro(r.Problema!.Mensagem);

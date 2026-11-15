@@ -7,5 +7,6 @@ RUN dotnet publish src/ConexaoSolidaria.Web/ConexaoSolidaria.Web.csproj -c Relea
 # Site estático (Blazor WebAssembly) servido pelo nginx.
 FROM nginx:1.29-alpine AS final
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY seguranca.conf /etc/nginx/seguranca.conf
 COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 EXPOSE 8080

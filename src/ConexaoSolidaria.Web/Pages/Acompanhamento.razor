@@ -14,6 +14,12 @@
         </Estado>
     </div>
 }
+else if (_doacao is null && _erro is not null)
+{
+    <div class="wrap">
+        <Estado Expressao="preocupado" Titulo="Não conseguimos carregar sua doação" Texto="@($"{_erro} Tentando de novo sozinho.")" />
+    </div>
+}
 else if (_doacao is null)
 {
     <div class="wrap"><Carregando Texto="Buscando sua doação" /></div>
@@ -75,6 +81,7 @@ else
     private Doacao? _doacao;
     private Campanha? _campanha;
     private bool _naoEncontrada;
+    private string? _erro;
     private readonly CancellationTokenSource _cts = new();
 
     private bool BateuMeta => _campanha is not null && _campanha.ValorTotalArrecadado >= _campanha.MetaFinanceira;
@@ -88,19 +95,25 @@ else
     private async Task CarregarAsync()
     {
         var r = await Api.DoacaoAsync(Id);
-        if (!r.Ok) { _naoEncontrada = r.Problema!.Status == 404; return; }
+        if (!r.Ok)
+        {
+            _naoEncontrada = r.Problema!.Status == 404;
+            _erro = r.Problema.Mensagem;
+            return;
+        }
+        _erro = null;
         _doacao = r.Valor;
         var c = await Api.CampanhaAsync(_doacao!.IdCampanha);
         if (c.Ok) _campanha = c.Valor;
     }
 
-    // Enquanto Pendente, consulta a cada 2 s até o worker processar.
+    // Enquanto Pendente (ou enquanto a primeira busca falhar por rede), consulta a cada 2 s até o worker processar.
     private async Task AcompanharAsync()
     {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         try
         {
-            while (_doacao is { Status: "Pendente" } && await timer.WaitForNextTickAsync(_cts.Token))
+            while (!_naoEncontrada && _doacao is null or { Status: "Pendente" } && await timer.WaitForNextTickAsync(_cts.Token))
             {
                 await CarregarAsync();
                 await InvokeAsync(StateHasChanged);

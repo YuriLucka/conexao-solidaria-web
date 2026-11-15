@@ -102,7 +102,6 @@ else
     private DoacoesDaCampanha? _doacoes;
     private bool _naoEncontrada;
     private string? _erro;
-    private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();
 
     protected override void OnInitialized() => _ = AtualizarSozinhoAsync();
@@ -141,10 +140,10 @@ else
     // O valor arrecadado e as doações recentes se atualizam sozinhos (o worker processa em segundos).
     private async Task AtualizarSozinhoAsync()
     {
-        _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         try
         {
-            while (await _timer.WaitForNextTickAsync(_cts.Token))
+            while (await timer.WaitForNextTickAsync(_cts.Token))
             {
                 await CarregarAsync();
                 await InvokeAsync(StateHasChanged);
@@ -167,7 +166,6 @@ else
     public ValueTask DisposeAsync()
     {
         _cts.Cancel();
-        _timer?.Dispose();
         return ValueTask.CompletedTask;
     }
 }

@@ -5,7 +5,7 @@
 
 <PageTitle>Conexão Solidária · Painel de transparência</PageTitle>
 
-<section class="hero">
+<section class="hero com-foto">
     <div class="wrap hero-in">
         <div class="hero-text">
             <span class="eyebrow">Painel de transparência</span>
@@ -69,7 +69,6 @@
     private List<CampanhaAtiva>? _ativas;
     private string? _erro;
     private DateTime? _atualizadoEm;
-    private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();
 
     private decimal Total => _ativas?.Sum(c => c.ValorTotalArrecadado) ?? 0;
@@ -100,10 +99,10 @@
     // Tempo real do painel: busca de novo a cada 5 s (o valor sobe quando o worker processa uma doação).
     private async Task AtualizarSozinhoAsync()
     {
-        _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         try
         {
-            while (await _timer.WaitForNextTickAsync(_cts.Token))
+            while (await timer.WaitForNextTickAsync(_cts.Token))
             {
                 await CarregarAsync();
                 await InvokeAsync(StateHasChanged);
@@ -115,7 +114,6 @@
     public ValueTask DisposeAsync()
     {
         _cts.Cancel();
-        _timer?.Dispose();
         return ValueTask.CompletedTask;
     }
 }

@@ -59,13 +59,21 @@ public class Api
         if (autenticado && _sessao.Logado) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sessao.Token);
 
         HttpResponseMessage resp;
+        // TaskCanceledException aqui é o tempo limite do HttpClient (nenhuma chamada passa token de cancelamento).
         try { resp = await _http.SendAsync(req); }
-        catch (HttpRequestException) { return Resultado<T>.Falha(Problema.SemConexao()); }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return Resultado<T>.Falha(Problema.SemConexao()); }
 
         using (resp)
         {
             if (resp.IsSuccessStatusCode)
-                return Resultado<T>.De((await resp.Content.ReadFromJsonAsync<T>(Json))!);
+            {
+                // Resposta 200 que não é JSON (ex.: index.html de um proxy mal configurado) vira erro, não exceção.
+                try { return Resultado<T>.De((await resp.Content.ReadFromJsonAsync<T>(Json))!); }
+                catch (Exception e) when (e is JsonException or NotSupportedException or TaskCanceledException)
+                {
+                    return Resultado<T>.Falha(new Problema(502, Padrao(500), new Dictionary<string, string[]>()));
+                }
+            }
 
             if (resp.StatusCode == HttpStatusCode.Unauthorized && autenticado && _sessao.Token is not null)
             {

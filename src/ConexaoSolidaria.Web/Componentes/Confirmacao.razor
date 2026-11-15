@@ -6,7 +6,7 @@
             <h2 id="mt">@Titulo</h2>
             <p class="muted">@Texto</p>
             <div class="row">
-                <button class="btn btn-ghost" @onclick="Voltar">Voltar</button>
+                <button class="btn btn-ghost" @onclick="Voltar" disabled="@Ocupado">Voltar</button>
                 <button class="btn @(Perigo ? "btn-danger" : "btn-primary")" @onclick="Confirmar" disabled="@Ocupado">@(Ocupado ? "Salvando…" : Ok)</button>
             </div>
         </div>
@@ -24,5 +24,6 @@
     [Parameter] public EventCallback AoVoltar { get; set; }
 
     private Task Confirmar() => AoConfirmar.InvokeAsync();
-    private Task Voltar() => AoVoltar.InvokeAsync();
+    // Durante o envio a janela não fecha: o resultado ainda vai ser mostrado.
+    private Task Voltar() => Ocupado ? Task.CompletedTask : AoVoltar.InvokeAsync();
 }

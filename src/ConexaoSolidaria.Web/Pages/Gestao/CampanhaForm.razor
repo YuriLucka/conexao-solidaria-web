@@ -14,6 +14,12 @@
         <a class="btn btn-primary" href="gestao/campanhas">Ver campanhas</a>
     </Estado>
 }
+else if (Editando && _original is null && _erroCarga is not null)
+{
+    <Estado Expressao="preocupado" Titulo="Não conseguimos carregar a campanha" Texto="@_erroCarga">
+        <button class="btn btn-primary" @onclick="OnParametersSetAsync">Tentar de novo</button>
+    </Estado>
+}
 else if (Editando && _original is null)
 {
     <Carregando Texto="Buscando a campanha" />
@@ -139,7 +145,7 @@ else
     private bool _naoEncontrada, _salvando, _capaManual;
     private string _titulo = "", _descricao = "", _categoria = "Educação", _capa = "livros", _criancas = "", _meta = "", _status = "Ativa";
     private string _inicio = "", _fim = "";
-    private string? _erroGeral;
+    private string? _erroGeral, _erroCarga;
     private Dictionary<string, string> _erros = new();
 
     private bool Editando => Id is not null;
@@ -174,7 +180,13 @@ else
             return;
         }
         var r = await Api.CampanhaAsync(Id!.Value);
-        if (!r.Ok) { _naoEncontrada = true; return; }
+        if (!r.Ok)
+        {
+            _naoEncontrada = r.Problema!.Status == 404;
+            _erroCarga = r.Problema.Mensagem;
+            return;
+        }
+        _erroCarga = null;
         _original = r.Valor!;
         (_titulo, _descricao, _categoria, _capa, _status) = (_original.Titulo, _original.Descricao, _original.Categoria ?? "", _original.Capa ?? "sol-colinas", _original.Status);
         _criancas = _original.CriancasAtendidas?.ToString() ?? "";
