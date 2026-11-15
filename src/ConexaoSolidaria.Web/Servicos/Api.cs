@@ -5,10 +5,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ConexaoSolidaria.Web.Modelos;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace ConexaoSolidaria.Web.Servicos;
 
 // Cliente da campanhas-api (pelo Kong). Erros viram Problema com a mensagem em português que a API já manda.
+// Com sessão aberta, um 401 dispara a renovação do JWT pelo refresh token e a chamada é repetida uma vez.
 public class Api
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -60,14 +62,21 @@ public class Api
 
     private async Task<Resultado<T>> Enviar<T>(HttpMethod metodo, string rota, object? corpo = null, bool autenticado = true)
     {
-        using var req = new HttpRequestMessage(metodo, rota);
-        if (corpo is not null) req.Content = JsonContent.Create(corpo, options: Json);
-        if (autenticado && _sessao.Logado) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sessao.Token);
+        var comSessao = autenticado && _sessao.Token is not null;
+        // JWT a ponto de vencer: renova antes, em vez de gastar uma ida e volta com 401.
+        if (comSessao && _sessao.ExpiraEm - DateTime.UtcNow < TimeSpan.FromSeconds(30))
+            await _sessao.RenovarAsync();
 
-        HttpResponseMessage resp;
-        // TaskCanceledException aqui é o tempo limite do HttpClient (nenhuma chamada passa token de cancelamento).
-        try { resp = await _http.SendAsync(req); }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return Resultado<T>.Falha(Problema.SemConexao()); }
+        var resp = await TentarAsync(metodo, rota, corpo, autenticado);
+        if (resp is null) return Resultado<T>.Falha(Problema.SemConexao());
+
+        // 401 com sessão aberta: o JWT venceu ou foi recusado. Renova pelo cookie e repete a chamada uma vez.
+        if (resp.StatusCode == HttpStatusCode.Unauthorized && comSessao && await _sessao.RenovarAsync())
+        {
+            resp.Dispose();
+            resp = await TentarAsync(metodo, rota, corpo, autenticado);
+            if (resp is null) return Resultado<T>.Falha(Problema.SemConexao());
+        }
 
         using (resp)
         {
@@ -81,9 +90,9 @@ public class Api
                 }
             }
 
-            if (resp.StatusCode == HttpStatusCode.Unauthorized && autenticado && _sessao.Token is not null)
+            if (resp.StatusCode == HttpStatusCode.Unauthorized && comSessao)
             {
-                // Token vencido ou inválido: encerra a sessão e leva para o login, voltando depois para onde estava.
+                // A sessão acabou de vez (refresh recusado): leva para o login, voltando depois para onde estava.
                 _sessao.VoltarPara = _nav.ToBaseRelativePath(_nav.Uri);
                 await _sessao.SairAsync();
                 _avisos.Info("Sua sessão expirou. Entre de novo para continuar.");
@@ -91,6 +100,20 @@ public class Api
             }
             return Resultado<T>.Falha(await LerProblemaAsync(resp));
         }
+    }
+
+    // Monta a requisição a cada tentativa (uma HttpRequestMessage não pode ser reenviada). Null = sem conexão.
+    private async Task<HttpResponseMessage?> TentarAsync(HttpMethod metodo, string rota, object? corpo, bool autenticado)
+    {
+        using var req = new HttpRequestMessage(metodo, rota);
+        if (corpo is not null) req.Content = JsonContent.Create(corpo, options: Json);
+        if (autenticado && _sessao.Logado) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sessao.Token);
+        // O login grava o cookie do refresh token; em desenvolvimento a API está em outra porta.
+        req.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+
+        // TaskCanceledException aqui é o tempo limite do HttpClient (nenhuma chamada passa token de cancelamento).
+        try { return await _http.SendAsync(req); }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return null; }
     }
 
     private static async Task<Problema> LerProblemaAsync(HttpResponseMessage resp)
