@@ -10,7 +10,7 @@
         <div class="hero-text">
             <span class="eyebrow">Painel de transparência</span>
             <h1>Cada real doado,<br /> <em>à vista de <span class="nw">todos.<span class="h1-sol"><Sol Expressao="acenando" Tamanho="80" Acenando="true" SemSombra="true" /></span></span></em></h1>
-            <p>Acompanhe quanto cada campanha da ONG Esperança Solidária já arrecadou. O valor muda assim que uma doação é processada.</p>
+            <p>Acompanhe quanto cada campanha da ONG Esperança Solidária já arrecadou. O valor muda assim que uma doação é confirmada.</p>
             <div class="hero-cta">
                 <a class="btn btn-doar btn-lg" href="@LinkQueroDoar"><Icone Nome="heart" />Quero doar</a>
                 <a class="btn btn-ghost btn-lg" href="como-funciona">Como funciona</a>
@@ -36,7 +36,7 @@
 <section class="wrap section">
     <div class="section-head">
         <h2>Campanhas ativas</h2>
-        <span class="muted small">@(_ativas?.Count ?? 0) campanhas · ordenadas pelo prazo</span>
+        <span class="muted small">@(_ativas?.Count ?? 0) @((_ativas?.Count ?? 0) == 1 ? "campanha" : "campanhas") · ordenadas pelo prazo</span>
     </div>
     @if (_erro is not null)
     {
@@ -50,7 +50,7 @@
     }
     else if (_ativas.Count == 0)
     {
-        <Estado Expressao="espiando" Titulo="Nenhuma campanha ativa no momento" Texto="Volte em breve: novas campanhas aparecem aqui assim que a ONG publica." Tamanho="120" />
+        <Estado Expressao="espiando" Titulo="Nenhuma campanha ativa no momento" Texto="Volte em breve: novas campanhas aparecem aqui assim que são publicadas pela ONG." Tamanho="120" />
     }
     else
     {

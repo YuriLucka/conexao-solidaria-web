@@ -36,7 +36,7 @@
     private IEnumerable<(string, string)> Itens => Sessao switch
     {
         { EhDoador: true } => [("", "Campanhas"), ("minhas-doacoes", "Minhas doações"), ("como-funciona", "Como funciona")],
-        { EhGestor: true } => [("", "Painel público"), ("gestao", "Área da gestão")],
+        { EhGestor: true } => [("", "Painel público"), ("gestao", "Área de gestão")],
         _ => [("", "Campanhas"), ("como-funciona", "Como funciona")]
     };
 

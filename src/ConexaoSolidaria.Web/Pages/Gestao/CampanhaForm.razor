@@ -10,7 +10,7 @@
 
 @if (_naoEncontrada)
 {
-    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço está errado.">
+    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço pode estar errado.">
         <a class="btn btn-primary" href="gestao/campanhas">Ver campanhas</a>
     </Estado>
 }
@@ -91,7 +91,7 @@ else
                     <p class="error" id="err-f-fim">@Erro("fim")</p>
                 </div>
             </div>
-            <p class="hint" id="hint-datas" style="margin-top:-6px">Horário de Brasília: a campanha começa às 00:00 do dia de início e termina às 23:59 do dia de término.</p>
+            <p class="hint" id="hint-datas" style="margin-top:-6px">Horário de Brasília: a campanha começa à 0h do dia de início e termina às 23h59 do dia de término.</p>
             <div class="field">
                 <label for="f-meta">Meta financeira</label>
                 <div class="money-input"><span>R$</span><input type="text" id="f-meta" inputmode="decimal" placeholder="0,00" @bind="_meta" @bind:event="oninput" aria-invalid="@Inv("meta")" /></div>

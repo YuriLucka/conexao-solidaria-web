@@ -44,13 +44,13 @@ else
                             <td class="full first">
                                 <div class="row" style="gap:12px;flex-wrap:nowrap">
                                     <span class="capa-mini"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></span>
-                                    <div><a href="gestao/campanhas/@c.Id" @onclick:stopPropagation="true">@c.Titulo</a><div class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{n} crianças" : null }.Where(x => x is not null))</div></div>
+                                    <div><a href="gestao/campanhas/@c.Id" @onclick:stopPropagation="true">@c.Titulo</a><div class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</div></div>
                                 </div>
                             </td>
                             <td class="tnum small" data-label="Período">@Formatos.Data(c.DataInicio)<br /><span class="muted">até @Formatos.Data(c.DataFim)</span></td>
                             <td class="num end" data-label="Meta">@Formatos.DinheiroInteiro(c.MetaFinanceira)</td>
                             <td class="full o1"><div class="row between small" style="margin-bottom:5px"><b class="tnum">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</b><span class="muted tnum">@Formatos.Porcentagem(p)</span></div><Medidor Progresso="p" Classe="thin" /></td>
-                            <td><SeloStatus Status="@c.Status" />@if (c.Status == "Ativa" && c.PrazoEncerrado) { <span class="pill pill-warn" style="margin-left:6px">Prazo vencido</span> }</td>
+                            <td><SeloStatus Status="@c.Status" />@if (c.Status == "Ativa" && c.PrazoEncerrado) { <span class="pill pill-warn" style="margin-left:6px">Prazo encerrado</span> }</td>
                             <td class="num end"><a class="btn btn-ghost btn-sm" href="gestao/campanhas/@c.Id/editar" @onclick:stopPropagation="true"><Icone Nome="edit" Tamanho="15" />Editar</a></td>
                         </tr>
                     }

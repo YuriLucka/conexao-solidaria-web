@@ -112,9 +112,9 @@ public class Api
     private static string Padrao(int status) => status switch
     {
         401 => "Entre na sua conta para continuar.",
-        403 => "Esta área é exclusiva da equipe da ONG.",
+        403 => "Seu perfil não tem permissão para esta ação.",
         404 => "Não encontramos o que você procurou.",
         >= 500 => "Algo deu errado do nosso lado. Tente de novo em alguns segundos.",
-        _ => "Não foi possível concluir. Revise os dados e tente de novo."
+        _ => "Não foi possível concluir a operação. Revise os dados e tente de novo."
     };
 }

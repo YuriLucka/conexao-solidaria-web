@@ -64,10 +64,10 @@
         </form>
         <aside class="why">
             <h2 style="font-size:18px">O que pedimos e por quê</h2>
-            <div><span class="ic-wrap"><Icone Nome="user" Tamanho="17" /></span><div><b>Nome completo</b><p>Para identificar você no recibo da doação.</p></div></div>
-            <div><span class="ic-wrap"><Icone Nome="mail" Tamanho="17" /></span><div><b>E-mail</b><p>É o seu login. Cada e-mail pode ter uma conta só.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="user" Tamanho="17" /></span><div><b>Nome completo</b><p>Para identificar você nas suas doações.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="mail" Tamanho="17" /></span><div><b>E-mail</b><p>É com ele que você entra no site. Cada e-mail pode ser usado em apenas uma conta.</p></div></div>
             <div><span class="ic-wrap"><Icone Nome="idcard" Tamanho="17" /></span><div><b>CPF</b><p>Usamos para identificar suas doações. Ele nunca aparece no site.</p></div></div>
-            <div><span class="ic-wrap"><Icone Nome="lock" Tamanho="17" /></span><div><b>Senha</b><p>Guardada com criptografia. Nem a equipe da ONG consegue ver.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="lock" Tamanho="17" /></span><div><b>Senha</b><p>Armazenada de forma protegida, com hash criptográfico. Nem a equipe da ONG tem acesso a ela.</p></div></div>
         </aside>
     </div>
 </div>
@@ -100,7 +100,7 @@
         if (!Formatos.CpfValido(_cpf)) _erros["cpf"] = "CPF inválido. Confira os números.";
         if (ForcaSenha < 4) _erros["senha"] = "A senha precisa de 8 caracteres ou mais, com letra, número e caractere especial.";
         if (_confirmacao != _senha) _erros["confirmacao"] = "As senhas não são iguais.";
-        if (!_termos) _erros["termos"] = "Para criar a conta, aceite os termos de uso.";
+        if (!_termos) _erros["termos"] = "Para criar a conta, aceite os termos de uso e a política de privacidade.";
         return _erros.Count == 0;
     }
 

@@ -11,7 +11,7 @@
 @if (_naoEncontrada)
 {
     <div class="wrap">
-        <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="O endereço pode estar errado ou a campanha foi removida.">
+        <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="O endereço pode estar errado ou a campanha pode ter sido removida.">
             <a class="btn btn-primary" href="">Ver campanhas</a>
         </Estado>
     </div>
@@ -40,7 +40,7 @@ else
                 <div class="camp-hero-cover"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></div>
                 <div class="row">
                     <SeloStatus Status="@c.Status" />
-                    <span class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{n} crianças" : null }.Where(x => x is not null))</span>
+                    <span class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</span>
                 </div>
                 <h1>@c.Titulo</h1>
                 @foreach (var paragrafo in c.Descricao.Split('\n', StringSplitOptions.RemoveEmptyEntries))

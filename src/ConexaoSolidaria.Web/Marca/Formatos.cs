@@ -41,7 +41,7 @@ public static class Formatos
     // "Faltam 13 dias", "Termina amanhã", "Termina hoje", "Prazo encerrado".
     public static string Prazo(string status, DateTime dataFim, bool prazoEncerrado)
     {
-        if (status == "Concluida") return $"Encerrada em {Data(dataFim)}";
+        if (status == "Concluida") return $"Término em {Data(dataFim)}";
         if (status == "Cancelada") return "Cancelada";
         if (prazoEncerrado) return "Prazo encerrado";
         var d = DiasRestantes(dataFim);

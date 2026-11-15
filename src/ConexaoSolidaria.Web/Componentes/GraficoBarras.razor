@@ -27,7 +27,7 @@
             var h = areaH * ((double)d.Valor / teto);
             var x = esq + slot * i + (slot - barra) / 2;
             <rect x="@F(x)" y="@F(topo + areaH - h)" width="@F(barra)" height="@F(Math.Max(0, h))" rx="2" style="fill:var(--verde)">
-                <title>@Formatos.DiaMes(d.Dia): @Formatos.Dinheiro(d.Valor) em @d.Doacoes doação(ões)</title>
+                <title>@Formatos.DiaMes(d.Dia): @Formatos.Dinheiro(d.Valor) em @d.Doacoes @(d.Doacoes == 1 ? "doação" : "doações")</title>
             </rect>
             @if ((i % cada == 0 && Dias.Count - 1 - i >= Math.Max(1, cada / 2)) || i == Dias.Count - 1)
             {

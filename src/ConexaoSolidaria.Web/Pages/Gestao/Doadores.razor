@@ -28,12 +28,12 @@ else
     <div class="tiles">
         <div class="tile"><span class="lbl">Doadores cadastrados</span><span class="val">@Formatos.Numero(_todos.Count)</span></div>
         <div class="tile"><span class="lbl">Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.UltimaDoacaoEm >= mes))</span></div>
-        <div class="tile"><span class="lbl">Recorrentes (2+ doações)</span><span class="val">@Formatos.Numero(_todos.Count(d => d.QuantidadeDoacoes >= 2))</span></div>
+        <div class="tile"><span class="lbl">Recorrentes (2 ou mais doações)</span><span class="val">@Formatos.Numero(_todos.Count(d => d.QuantidadeDoacoes >= 2))</span></div>
         <div class="tile"><span class="lbl">Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.CriadoEm >= mes))</span></div>
     </div>
     <div class="toolbar">
         <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar doadores" @bind="_busca" @bind:event="oninput" @bind:after="() => _pagina = 1" /></div>
-        <span class="muted small">@Formatos.Numero(lista.Count) resultado(s)</span>
+        <span class="muted small">@Formatos.Numero(lista.Count) @(lista.Count == 1 ? "resultado" : "resultados")</span>
     </div>
     <div class="card t-card">
         <div class="tscroll">

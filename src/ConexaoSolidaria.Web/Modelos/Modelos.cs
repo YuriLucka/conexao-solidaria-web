@@ -46,7 +46,7 @@ public record ResumoGestao(
 public record Problema(int Status, string Mensagem, IReadOnlyDictionary<string, string[]> Campos)
 {
     public static Problema SemConexao() =>
-        new(0, "Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo.", new Dictionary<string, string[]>());
+        new(0, "Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente de novo.", new Dictionary<string, string[]>());
 
     public string? Campo(string nome) => Campos.TryGetValue(nome, out var m) ? m.FirstOrDefault() : null;
 }

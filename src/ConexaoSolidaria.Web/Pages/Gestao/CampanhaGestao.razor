@@ -9,7 +9,7 @@
 
 @if (_naoEncontrada)
 {
-    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço está errado.">
+    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço pode estar errado.">
         <a class="btn btn-primary" href="gestao/campanhas">Ver campanhas</a>
     </Estado>
 }
@@ -30,18 +30,18 @@ else
             <p>@Formatos.DataHora(c.DataInicio) até @Formatos.DataHora(c.DataFim) · @Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</p>
         </div>
         <div class="g-actions">
-            <a class="btn btn-ghost" href="campanhas/@c.Id"><Icone Nome="globe" Tamanho="16" />Ver no painel</a>
+            <a class="btn btn-ghost" href="campanhas/@c.Id"><Icone Nome="globe" Tamanho="16" />Ver no painel público</a>
             <a class="btn btn-ghost" href="gestao/campanhas/@c.Id/editar"><Icone Nome="edit" Tamanho="16" />Editar</a>
             @if (c.Status == "Ativa")
             {
                 <button class="btn btn-quiet" @onclick="@(() => Perguntar("Concluida"))"><Icone Nome="check" Tamanho="16" />Concluir</button>
-                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar</button>
+                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar campanha</button>
             }
         </div>
     </div>
     <div class="tiles">
         <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
-        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(confirmadas.Count)</span><span class="small muted">@((_doacoes?.Count ?? 0) - confirmadas.Count) em confirmação ou não concluída(s)</span></div>
+        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(confirmadas.Count)</span><span class="small muted">@((_doacoes?.Count ?? 0) - confirmadas.Count) em confirmação ou não @((_doacoes?.Count ?? 0) - confirmadas.Count == 1 ? "concluída" : "concluídas")</span></div>
         <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(confirmadas.Select(d => d.DoadorId).Distinct().Count())</span></div>
         <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(confirmadas.Count == 0 ? 0 : confirmadas.Average(d => d.ValorDoacao))</span></div>
     </div>
@@ -70,7 +70,7 @@ else
     </section>
     <Confirmacao Aberta="@(_pergunta is not null)" Ocupado="_salvando"
                  Titulo="@(_pergunta == "Concluida" ? "Concluir esta campanha?" : "Cancelar esta campanha?")"
-                 Texto="@(_pergunta == "Concluida" ? "Ela sai do painel público e para de receber doações. O valor arrecadado fica registrado. Dá para reabrir depois, se o término ainda estiver no futuro." : "Ela sai do painel público e para de receber doações. Doações ainda em confirmação não serão somadas.")"
+                 Texto="@(_pergunta == "Concluida" ? "Ela sai do painel público e para de receber doações. O valor arrecadado fica registrado. É possível reabri-la depois, se a data de término ainda não tiver passado." : "Ela sai do painel público e para de receber doações. Doações ainda em confirmação não serão somadas.")"
                  Ok="@(_pergunta == "Concluida" ? "Concluir" : "Cancelar campanha")" Perigo="@(_pergunta == "Cancelada")"
                  AoConfirmar="MudarStatusAsync" AoVoltar="() => _pergunta = null" />
 }

@@ -169,8 +169,8 @@ else
         {
             var dias = Formatos.DiasRestantes(c.DataFim);
             var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
-            if (c.PrazoEncerrado) lista.Add(("warn", c, "está com o prazo vencido e ainda aparece como Ativa. Conclua ou ajuste o término."));
-            else if (dias <= 14 && p < 1) lista.Add(("warn", c, $"termina em {dias} dias e está em {Formatos.Porcentagem(p)}. Faltam {Formatos.DinheiroInteiro(c.MetaFinanceira - c.ValorTotalArrecadado)}."));
+            if (c.PrazoEncerrado) lista.Add(("warn", c, "está com o prazo encerrado e ainda aparece como Ativa. Conclua ou ajuste o término."));
+            else if (dias <= 14 && p < 1) lista.Add(("warn", c, $"{(dias <= 0 ? "termina hoje" : dias == 1 ? "termina amanhã" : $"termina em {dias} dias")} e está em {Formatos.Porcentagem(p)} da meta. Faltam {Formatos.DinheiroInteiro(c.MetaFinanceira - c.ValorTotalArrecadado)}."));
             else if (p is >= .9 and < 1) lista.Add(("ok", c, "passou de 90% da meta."));
         }
         return lista;
