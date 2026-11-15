@@ -1,0 +1,28 @@
+@* Janela de confirmação (concluir ou cancelar campanha), no estilo do protótipo. *@
+@if (Aberta)
+{
+    <div class="modal-bg" @onclick="Voltar">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt" @onclick:stopPropagation="true">
+            <h2 id="mt">@Titulo</h2>
+            <p class="muted">@Texto</p>
+            <div class="row">
+                <button class="btn btn-ghost" @onclick="Voltar">Voltar</button>
+                <button class="btn @(Perigo ? "btn-danger" : "btn-primary")" @onclick="Confirmar" disabled="@Ocupado">@(Ocupado ? "Salvando…" : Ok)</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Aberta { get; set; }
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public string Texto { get; set; } = "";
+    [Parameter] public string Ok { get; set; } = "Confirmar";
+    [Parameter] public bool Perigo { get; set; }
+    [Parameter] public bool Ocupado { get; set; }
+    [Parameter] public EventCallback AoConfirmar { get; set; }
+    [Parameter] public EventCallback AoVoltar { get; set; }
+
+    private Task Confirmar() => AoConfirmar.InvokeAsync();
+    private Task Voltar() => AoVoltar.InvokeAsync();
+}

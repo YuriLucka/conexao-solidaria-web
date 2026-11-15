@@ -1,0 +1,67 @@
+@* Gráfico de barras da arrecadação por dia (SVG, mesmo visual do protótipo) com a tabela dos dados para acessibilidade. *@
+@{
+    const int largura = 720, altura = 230, esq = 44, dir = 8, topo = 14, baixo = 26;
+    var n = Math.Max(1, Dias.Count);
+    var maximo = Math.Max(1m, Dias.Count == 0 ? 0 : Dias.Max(d => d.Valor));
+    var passo = PassoBonito((double)maximo / 4);
+    var teto = Math.Ceiling((double)maximo / passo) * passo;
+    var areaW = largura - esq - dir;
+    var areaH = altura - topo - baixo;
+    var slot = areaW / (double)n;
+    var barra = Math.Max(2, slot * .64);
+    var cada = Math.Max(1, (int)Math.Ceiling(n / 8.0));
+    string F(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}
+<div class="chart">
+    <svg viewBox="0 0 @largura @altura" style="width:100%;height:auto;display:block" role="img" aria-label="@Titulo">
+        @for (var i = 0; i <= 4; i++)
+        {
+            var valor = teto / 4 * i;
+            var y = topo + areaH - areaH * (valor / teto);
+            <line x1="@esq" x2="@(largura - dir)" y1="@F(y)" y2="@F(y)" style="stroke:var(--line)" stroke-width="1" />
+            @((MarkupString)$"<text x=\"{esq - 6}\" y=\"{F(y + 4)}\" text-anchor=\"end\" font-size=\"11\" style=\"fill:var(--muted)\">{Eixo(valor)}</text>")
+        }
+        @for (var i = 0; i < Dias.Count; i++)
+        {
+            var d = Dias[i];
+            var h = areaH * ((double)d.Valor / teto);
+            var x = esq + slot * i + (slot - barra) / 2;
+            <rect x="@F(x)" y="@F(topo + areaH - h)" width="@F(barra)" height="@F(Math.Max(0, h))" rx="2" style="fill:var(--verde)">
+                <title>@Formatos.DiaMes(d.Dia): @Formatos.Dinheiro(d.Valor) em @d.Doacoes doação(ões)</title>
+            </rect>
+            @if ((i % cada == 0 && Dias.Count - 1 - i >= Math.Max(1, cada / 2)) || i == Dias.Count - 1)
+            {
+                @((MarkupString)$"<text x=\"{F(esq + slot * i + slot / 2)}\" y=\"{altura - 8}\" text-anchor=\"middle\" font-size=\"11\" style=\"fill:var(--muted)\">{Formatos.DiaMes(d.Dia)}</text>")
+            }
+        }
+    </svg>
+</div>
+<details class="tview">
+    <summary>Ver dados em tabela</summary>
+    <div class="tscroll">
+        <table class="table">
+            <thead><tr><th>Dia</th><th class="num">Valor</th><th class="num">Doações</th></tr></thead>
+            <tbody>
+                @foreach (var d in Dias)
+                {
+                    <tr><td>@Formatos.DiaMes(d.Dia)</td><td class="num">@Formatos.DinheiroInteiro(d.Valor)</td><td class="num">@d.Doacoes</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</details>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ArrecadacaoDia> Dias { get; set; } = [];
+    [Parameter] public string Titulo { get; set; } = "Arrecadação por dia";
+
+    private static double PassoBonito(double v)
+    {
+        if (v <= 0) return 1;
+        var e = Math.Pow(10, Math.Floor(Math.Log10(v)));
+        var f = v / e;
+        return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e;
+    }
+
+    private static string Eixo(double v) => v >= 1000 ? $"{(v / 1000).ToString("0.#").Replace('.', ',')} mil" : v.ToString("0");
+}

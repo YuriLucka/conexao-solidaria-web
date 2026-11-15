@@ -1,0 +1,143 @@
+@page "/gestao/campanhas/{Id:guid}"
+@layout GestaoLayout
+@attribute [Authorize(Roles = "GestorONG")]
+@implements IAsyncDisposable
+@inject Api Api
+@inject Avisos Avisos
+
+<PageTitle>@(_campanha?.Titulo ?? "Campanha") · Gestão · Conexão Solidária</PageTitle>
+
+@if (_naoEncontrada)
+{
+    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço está errado.">
+        <a class="btn btn-primary" href="gestao/campanhas">Ver campanhas</a>
+    </Estado>
+}
+else if (_campanha is null)
+{
+    <Carregando Texto="Buscando a campanha" />
+}
+else
+{
+    var c = _campanha;
+    var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
+    var confirmadas = _doacoes?.Where(d => d.Status == "Processada").ToList() ?? [];
+    <a href="gestao/campanhas" class="back" style="margin:0"><Icone Nome="left" Tamanho="16" />Campanhas</a>
+    <div class="g-head">
+        <div>
+            <div class="row"><SeloStatus Status="@c.Status" /><span class="muted small">@c.Categoria</span></div>
+            <h1>@c.Titulo</h1>
+            <p>@Formatos.DataHora(c.DataInicio) até @Formatos.DataHora(c.DataFim) · @Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</p>
+        </div>
+        <div class="g-actions">
+            <a class="btn btn-ghost" href="campanhas/@c.Id"><Icone Nome="globe" Tamanho="16" />Ver no painel</a>
+            <a class="btn btn-ghost" href="gestao/campanhas/@c.Id/editar"><Icone Nome="edit" Tamanho="16" />Editar</a>
+            @if (c.Status == "Ativa")
+            {
+                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Concluida"))"><Icone Nome="check" Tamanho="16" />Concluir</button>
+                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar</button>
+            }
+        </div>
+    </div>
+    <div class="tiles">
+        <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
+        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(confirmadas.Count)</span><span class="small muted">@((_doacoes?.Count ?? 0) - confirmadas.Count) em confirmação ou não concluída(s)</span></div>
+        <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(confirmadas.Select(d => d.DoadorId).Distinct().Count())</span></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(confirmadas.Count == 0 ? 0 : confirmadas.Average(d => d.ValorDoacao))</span></div>
+    </div>
+    <section class="card t-card">
+        <div class="card-head"><h2>Doações</h2><span class="muted small">@Math.Min(25, _doacoes?.Count ?? 0) mais recentes de @Formatos.Numero(_doacoes?.Count ?? 0)</span></div>
+        <div class="tscroll">
+            <table class="table rtable" style="min-width:680px">
+                <thead><tr><th>Doador</th><th>Data</th><th class="num">Valor</th><th>Situação</th></tr></thead>
+                <tbody>
+                    @foreach (var d in (_doacoes ?? []).Take(25))
+                    {
+                        <tr>
+                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div><b>@d.NomeDoador</b></div></div></td>
+                            <td class="tnum small" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
+                            <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
+                            <td><SeloDoacao Status="@d.Status" /></td>
+                        </tr>
+                    }
+                    @if (_doacoes is { Count: 0 })
+                    {
+                        <tr><td colspan="4" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhuma doação ainda" Tamanho="100" Classe="state-sm" /></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <Confirmacao Aberta="@(_pergunta is not null)" Ocupado="_salvando"
+                 Titulo="@(_pergunta == "Concluida" ? "Concluir esta campanha?" : "Cancelar esta campanha?")"
+                 Texto="@(_pergunta == "Concluida" ? "Ela sai do painel público e para de receber doações. O valor arrecadado fica registrado. Dá para reabrir depois, se o término ainda estiver no futuro." : "Ela sai do painel público e para de receber doações. Doações ainda em confirmação não serão somadas.")"
+                 Ok="@(_pergunta == "Concluida" ? "Concluir" : "Cancelar campanha")" Perigo="@(_pergunta == "Cancelada")"
+                 AoConfirmar="MudarStatusAsync" AoVoltar="() => _pergunta = null" />
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Campanha? _campanha;
+    private List<DoacaoGestao>? _doacoes;
+    private bool _naoEncontrada, _salvando;
+    private string? _pergunta;
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+        _ = AoVivoAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        var c = Api.CampanhaAsync(Id);
+        var d = Api.DoacoesGestaoAsync(Id, limite: 500);
+        var rc = await c;
+        if (!rc.Ok) { _naoEncontrada = rc.Problema!.Status == 404; return; }
+        _campanha = rc.Valor;
+        var rd = await d;
+        if (rd.Ok) _doacoes = rd.Valor;
+    }
+
+    private void Perguntar(string status) => _pergunta = status;
+
+    // Concluir/cancelar = PUT com os mesmos dados e o novo status.
+    private async Task MudarStatusAsync()
+    {
+        var c = _campanha!;
+        _salvando = true;
+        var r = await Api.AtualizarCampanhaAsync(c.Id, new SalvarCampanhaRequest(c.Titulo, c.Descricao, c.DataInicio, c.DataFim,
+            c.MetaFinanceira, _pergunta, c.Categoria, c.Capa, c.CriancasAtendidas));
+        _salvando = false;
+        if (r.Ok)
+        {
+            Avisos.Ok(_pergunta == "Concluida" ? "Campanha concluída." : "Campanha cancelada.");
+            _campanha = r.Valor;
+        }
+        else Avisos.Erro(r.Problema!.Mensagem);
+        _pergunta = null;
+    }
+
+    private async Task AoVivoAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (_pergunta is not null) continue;
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}

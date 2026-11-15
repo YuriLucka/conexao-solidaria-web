@@ -93,6 +93,18 @@ public static class Formatos
         };
     }
 
+    // "15112026" -> "15/11/2026" enquanto digita.
+    public static string MascaraData(string? texto)
+    {
+        var d = new string((texto ?? "").Where(char.IsDigit).Take(8).ToArray());
+        return d.Length switch
+        {
+            <= 2 => d,
+            <= 4 => $"{d[..2]}/{d[2..]}",
+            _ => $"{d[..2]}/{d[2..4]}/{d[4..]}"
+        };
+    }
+
     // Mesma regra da API (dígitos verificadores), para avisar antes de enviar.
     public static bool CpfValido(string texto)
     {

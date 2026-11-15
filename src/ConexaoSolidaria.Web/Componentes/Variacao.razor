@@ -1,0 +1,17 @@
+@* Variação contra o período anterior (▲ 12,3% vs. 30 dias anteriores). *@
+@if (Anterior == 0)
+{
+    <span class="delta flat"><b>—</b><span>sem base anterior</span></span>
+}
+else
+{
+    var v = (double)((Atual - Anterior) / Anterior);
+    var classe = Math.Abs(v) < .005 ? "flat" : v > 0 ? "up" : "down";
+    <span class="delta @classe"><b>@(v > 0 ? "▲" : v < 0 ? "▼" : "") @Math.Abs(v * 100).ToString("0.0").Replace('.', ',')%</b><span>vs. @Dias dias anteriores</span></span>
+}
+
+@code {
+    [Parameter] public decimal Atual { get; set; }
+    [Parameter] public decimal Anterior { get; set; }
+    [Parameter] public int Dias { get; set; }
+}

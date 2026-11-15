@@ -1,0 +1,90 @@
+@page "/gestao/doadores"
+@layout GestaoLayout
+@attribute [Authorize(Roles = "GestorONG")]
+@inject Api Api
+
+<PageTitle>Doadores · Gestão · Conexão Solidária</PageTitle>
+
+<div class="g-head">
+    <div><span class="eyebrow">Gestão</span><h1>Doadores</h1><p>Pessoas cadastradas para doar. Por privacidade, o CPF aparece parcialmente oculto.</p></div>
+</div>
+
+@if (_erro is not null)
+{
+    <Estado Expressao="preocupado" Titulo="Não conseguimos carregar os doadores" Texto="@_erro">
+        <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+    </Estado>
+}
+else if (_todos is null)
+{
+    <Carregando Texto="Buscando os doadores" />
+}
+else
+{
+    var mes = DateTime.UtcNow.AddDays(-30);
+    var lista = Filtrados.ToList();
+    var paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
+    var pagina = Math.Min(_pagina, paginas);
+    <div class="tiles">
+        <div class="tile"><span class="lbl">Doadores cadastrados</span><span class="val">@Formatos.Numero(_todos.Count)</span></div>
+        <div class="tile"><span class="lbl">Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.UltimaDoacaoEm >= mes))</span></div>
+        <div class="tile"><span class="lbl">Recorrentes (2+ doações)</span><span class="val">@Formatos.Numero(_todos.Count(d => d.QuantidadeDoacoes >= 2))</span></div>
+        <div class="tile"><span class="lbl">Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(_todos.Count(d => d.CriadoEm >= mes))</span></div>
+    </div>
+    <div class="toolbar">
+        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar doadores" @bind="_busca" @bind:event="oninput" @bind:after="() => _pagina = 1" /></div>
+        <span class="muted small">@Formatos.Numero(lista.Count) resultado(s)</span>
+    </div>
+    <div class="card t-card">
+        <div class="tscroll">
+            <table class="table rtable" style="min-width:820px">
+                <thead><tr><th>Doador</th><th>CPF</th><th>Cadastro</th><th class="num">Doações</th><th class="num">Total doado</th><th>Última doação</th></tr></thead>
+                <tbody>
+                    @foreach (var d in lista.Skip((pagina - 1) * PorPagina).Take(PorPagina))
+                    {
+                        <tr>
+                            <td class="full first"><div class="person"><Avatar Nome="@d.NomeCompleto" /><div><b>@d.NomeCompleto</b><small>@d.Email</small></div></div></td>
+                            <td class="tnum small" data-label="CPF">@d.CpfMascarado</td>
+                            <td class="tnum small end" data-label="Cadastro">@Formatos.Data(d.CriadoEm)</td>
+                            <td class="num" data-label="Doações">@d.QuantidadeDoacoes</td>
+                            <td class="num end" data-label="Total doado"><b>@Formatos.Dinheiro(d.TotalDoado)</b></td>
+                            <td class="small muted" data-label="Última doação">@(d.UltimaDoacaoEm is DateTime u ? Formatos.Ha(u) : "—")</td>
+                        </tr>
+                    }
+                    @if (lista.Count == 0)
+                    {
+                        <tr><td colspan="6" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhum doador encontrado" Texto="Tente outra busca." Tamanho="100" Classe="state-sm" /></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="pager">
+            <span>Página @pagina de @paginas</span>
+            <div class="row">
+                <button class="btn btn-ghost btn-sm" disabled="@(pagina <= 1)" @onclick="() => _pagina = pagina - 1"><Icone Nome="left" Tamanho="15" />Anterior</button>
+                <button class="btn btn-ghost btn-sm" disabled="@(pagina >= paginas)" @onclick="() => _pagina = pagina + 1">Próxima<Icone Nome="right" Tamanho="15" /></button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const int PorPagina = 15;
+    private List<DoadorGestao>? _todos;
+    private string _busca = "";
+    private int _pagina = 1;
+    private string? _erro;
+
+    private IEnumerable<DoadorGestao> Filtrados => (_todos ?? []).Where(d => _busca.Trim() is ""
+        || d.NomeCompleto.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase)
+        || d.Email.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    protected override Task OnInitializedAsync() => CarregarAsync();
+
+    private async Task CarregarAsync()
+    {
+        var r = await Api.DoadoresAsync();
+        if (r.Ok) (_todos, _erro) = (r.Valor, null);
+        else _erro = r.Problema!.Mensagem;
+    }
+}

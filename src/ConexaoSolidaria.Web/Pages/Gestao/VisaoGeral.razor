@@ -1,0 +1,181 @@
+@page "/gestao"
+@layout GestaoLayout
+@attribute [Authorize(Roles = "GestorONG")]
+@implements IAsyncDisposable
+@inject Api Api
+@inject Sessao Sessao
+
+<PageTitle>Visão geral · Gestão · Conexão Solidária</PageTitle>
+
+<div class="g-head">
+    <div class="g-hello">
+        <Sol Expressao="acenando" Tamanho="76" Acenando="true" />
+        <div>
+            <span class="eyebrow">@Saudacao, @Formatos.PrimeiroNome(Sessao.Nome ?? "")</span>
+            <h1>Visão geral</h1>
+            <p>Doações confirmadas no período escolhido.</p>
+        </div>
+    </div>
+    <div class="g-actions">
+        <div class="seg" role="group" aria-label="Período">
+            @foreach (var d in new[] { 7, 30, 90 })
+            {
+                <button class="@(_dias == d ? "on" : "")" aria-pressed="@(_dias == d ? "true" : "false")" @onclick="() => MudarPeriodo(d)">@d dias</button>
+            }
+        </div>
+        <a class="btn btn-primary" href="gestao/campanhas/nova"><Icone Nome="plus" Tamanho="17" />Nova campanha</a>
+    </div>
+</div>
+
+@if (_erro is not null)
+{
+    <Estado Expressao="preocupado" Titulo="Não conseguimos carregar a visão geral" Texto="@_erro">
+        <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+    </Estado>
+}
+else if (_resumo is null || _campanhas is null)
+{
+    <Carregando Texto="Preparando a visão geral" />
+}
+else
+{
+    var r = _resumo;
+    var ativas = _campanhas.Where(c => c.Status == "Ativa").OrderBy(c => c.DataFim).ToList();
+    <div class="tiles">
+        <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val tnum">@Formatos.DinheiroInteiro(r.Arrecadado)</span><Variacao Atual="r.Arrecadado" Anterior="r.ArrecadadoPeriodoAnterior" Dias="r.Dias" /></div>
+        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val tnum">@Formatos.Numero(r.DoacoesConfirmadas)</span><Variacao Atual="r.DoacoesConfirmadas" Anterior="r.DoacoesConfirmadasPeriodoAnterior" Dias="r.Dias" /></div>
+        <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(r.DoadoresUnicos)</span><Variacao Atual="r.DoadoresUnicos" Anterior="r.DoadoresUnicosPeriodoAnterior" Dias="r.Dias" /></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(r.TicketMedio)</span><Variacao Atual="r.TicketMedio" Anterior="r.TicketMedioPeriodoAnterior" Dias="r.Dias" /></div>
+    </div>
+    <div class="dash">
+        <div class="stack" style="gap:22px">
+            <section class="card">
+                <div class="card-head"><h2>Arrecadação por dia</h2><span class="muted small">últimos @r.Dias dias · R$</span></div>
+                <GraficoBarras Dias="r.PorDia" />
+            </section>
+            <section class="card">
+                <div class="card-head"><h2>Campanhas ativas</h2><a href="gestao/campanhas" class="small">Ver todas</a></div>
+                <div class="prog-list">
+                    @foreach (var c in ativas)
+                    {
+                        var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
+                        <div class="prog-item">
+                            <div class="top"><a href="gestao/campanhas/@c.Id">@c.Titulo</a><b class="tnum small">@Formatos.Porcentagem(p)</b></div>
+                            <Medidor Progresso="p" Classe="thin" />
+                            <div class="meta"><span class="tnum">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado) de @Formatos.DinheiroInteiro(c.MetaFinanceira)</span><span>@Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</span></div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+        <div class="stack" style="gap:22px">
+            <section class="card">
+                <div class="card-head"><h2>Hoje</h2><span class="live"><i></i>ao vivo</span></div>
+                <div class="row" style="gap:22px;align-items:flex-start">
+                    <div><span class="qcount tnum">@Formatos.DinheiroInteiro(r.ArrecadadoHoje)</span><span class="muted small">arrecadados</span></div>
+                    <div><span class="qcount tnum">@r.DoacoesHoje</span><span class="muted small">doações</span></div>
+                    <div><span class="qcount tnum">@r.DoacoesPendentes</span><span class="muted small">em confirmação</span></div>
+                </div>
+            </section>
+            @if (Alertas(ativas) is { Count: > 0 } alertas)
+            {
+                <section class="card">
+                    <div class="card-head"><h2>Atenção</h2></div>
+                    <div class="alert-list">
+                        @foreach (var (tipo, campanha, texto) in alertas)
+                        {
+                            <div class="notice @tipo"><Icone Nome="@(tipo == "ok" ? "trend" : "alert")" Tamanho="17" /><div><b>@campanha.Titulo</b> @texto <a href="gestao/campanhas/@campanha.Id">Abrir</a></div></div>
+                        }
+                    </div>
+                </section>
+            }
+            <section class="card">
+                <div class="card-head"><h2>Doações recentes</h2><a href="gestao/doacoes" class="small">Ver todas</a></div>
+                <ul class="feed">
+                    @foreach (var d in _recentes ?? [])
+                    {
+                        <li>
+                            <Avatar Nome="@d.NomeDoador" />
+                            <div class="grow"><b>@d.NomeDoador</b><div class="muted small">@d.TituloCampanha · @Formatos.Ha(d.CriadaEm)</div></div>
+                            <div style="text-align:right"><b class="tnum">@Formatos.Dinheiro(d.ValorDoacao)</b><div><SeloDoacao Status="@d.Status" /></div></div>
+                        </li>
+                    }
+                    @if (_recentes is { Count: 0 })
+                    {
+                        <li class="feed-empty"><Sol Expressao="espiando" Tamanho="64" /><span>Nenhuma doação ainda.</span></li>
+                    }
+                </ul>
+            </section>
+        </div>
+    </div>
+}
+
+@code {
+    private int _dias = 30;
+    private ResumoGestao? _resumo;
+    private List<Campanha>? _campanhas;
+    private List<DoacaoGestao>? _recentes;
+    private string? _erro;
+    private readonly CancellationTokenSource _cts = new();
+
+    private static string Saudacao => Formatos.ParaBrasilia(DateTime.UtcNow).Hour switch { < 12 => "Bom dia", < 18 => "Boa tarde", _ => "Boa noite" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+        _ = AoVivoAsync();
+    }
+
+    private async Task MudarPeriodo(int dias)
+    {
+        _dias = dias;
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        var resumo = Api.ResumoAsync(_dias);
+        var campanhas = Api.CampanhasAsync();
+        var recentes = Api.DoacoesGestaoAsync(limite: 8);
+        var (r, c, d) = (await resumo, await campanhas, await recentes);
+        var falha = new[] { r.Problema, c.Problema, d.Problema }.FirstOrDefault(p => p is not null);
+        if (falha is not null) { if (_resumo is null) _erro = falha.Mensagem; return; }
+        (_resumo, _campanhas, _recentes, _erro) = (r.Valor, c.Valor, d.Valor, null);
+    }
+
+    // "Ao vivo": atualiza a cada 5 s.
+    private async Task AoVivoAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    // Mesmas regras do protótipo: termina em até 14 dias sem bater a meta; passou de 90%.
+    private static List<(string, Campanha, string)> Alertas(List<Campanha> ativas)
+    {
+        var lista = new List<(string, Campanha, string)>();
+        foreach (var c in ativas)
+        {
+            var dias = Formatos.DiasRestantes(c.DataFim);
+            var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
+            if (c.PrazoEncerrado) lista.Add(("warn", c, "está com o prazo vencido e ainda aparece como Ativa. Conclua ou ajuste o término."));
+            else if (dias <= 14 && p < 1) lista.Add(("warn", c, $"termina em {dias} dias e está em {Formatos.Porcentagem(p)}. Faltam {Formatos.DinheiroInteiro(c.MetaFinanceira - c.ValorTotalArrecadado)}."));
+            else if (p is >= .9 and < 1) lista.Add(("ok", c, "passou de 90% da meta."));
+        }
+        return lista;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}

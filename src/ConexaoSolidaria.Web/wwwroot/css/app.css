@@ -30,3 +30,6 @@
 
 /* O Blazor foca o título ao navegar (leitores de tela); sem moldura visual nesse caso. */
 h1:focus, h1:focus-visible { outline: none; }
+
+/* Botão de tema do menu da gestão alinhado com os links (o reset do MudBlazor centraliza botões). */
+.g-theme { justify-content: flex-start; margin: 0; width: 100%; font-family: var(--f-body); }

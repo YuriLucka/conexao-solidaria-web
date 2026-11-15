@@ -1,0 +1,92 @@
+@page "/gestao/campanhas"
+@layout GestaoLayout
+@attribute [Authorize(Roles = "GestorONG")]
+@inject Api Api
+@inject NavigationManager Nav
+
+<PageTitle>Campanhas · Gestão · Conexão Solidária</PageTitle>
+
+<div class="g-head">
+    <div><span class="eyebrow">Gestão</span><h1>Campanhas</h1><p>Crie, edite e encerre campanhas. Só as ativas aparecem no painel público.</p></div>
+    <div class="g-actions"><a class="btn btn-primary" href="gestao/campanhas/nova"><Icone Nome="plus" Tamanho="17" />Nova campanha</a></div>
+</div>
+
+@if (_erro is not null)
+{
+    <Estado Expressao="preocupado" Titulo="Não conseguimos carregar as campanhas" Texto="@_erro">
+        <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+    </Estado>
+}
+else if (_todas is null)
+{
+    <Carregando Texto="Buscando as campanhas" />
+}
+else
+{
+    <div class="toolbar">
+        <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por título ou categoria" aria-label="Buscar campanhas" @bind="_busca" @bind:event="oninput" /></div>
+        <div class="chips" role="group" aria-label="Filtrar por status">
+            @foreach (var (status, rotulo) in Filtros)
+            {
+                <button class="chip @(_filtro == status ? "on" : "")" aria-pressed="@(_filtro == status ? "true" : "false")" @onclick="() => _filtro = status">@rotulo <span>@Contar(status)</span></button>
+            }
+        </div>
+    </div>
+    <div class="card t-card">
+        <div class="tscroll">
+            <table class="table rtable" style="min-width:860px">
+                <thead><tr><th>Campanha</th><th>Período</th><th class="num">Meta</th><th style="width:220px">Arrecadado</th><th>Status</th><th class="num">Ações</th></tr></thead>
+                <tbody>
+                    @foreach (var c in Lista)
+                    {
+                        var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
+                        <tr class="click" @onclick="() => Abrir(c.Id)">
+                            <td class="full first">
+                                <div class="row" style="gap:12px;flex-wrap:nowrap">
+                                    <span class="capa-mini"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></span>
+                                    <div><a href="gestao/campanhas/@c.Id" @onclick:stopPropagation="true">@c.Titulo</a><div class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{n} crianças" : null }.Where(x => x is not null))</div></div>
+                                </div>
+                            </td>
+                            <td class="tnum small" data-label="Período">@Formatos.Data(c.DataInicio)<br /><span class="muted">até @Formatos.Data(c.DataFim)</span></td>
+                            <td class="num end" data-label="Meta">@Formatos.DinheiroInteiro(c.MetaFinanceira)</td>
+                            <td class="full o1"><div class="row between small" style="margin-bottom:5px"><b class="tnum">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</b><span class="muted tnum">@Formatos.Porcentagem(p)</span></div><Medidor Progresso="p" Classe="thin" /></td>
+                            <td><SeloStatus Status="@c.Status" />@if (c.Status == "Ativa" && c.PrazoEncerrado) { <span class="pill pill-warn" style="margin-left:6px">Prazo vencido</span> }</td>
+                            <td class="num end"><a class="btn btn-ghost btn-sm" href="gestao/campanhas/@c.Id/editar" @onclick:stopPropagation="true"><Icone Nome="edit" Tamanho="15" />Editar</a></td>
+                        </tr>
+                    }
+                    @if (!Lista.Any())
+                    {
+                        <tr><td colspan="6" class="empty-cell full"><Estado Expressao="espiando" Titulo="Nenhuma campanha encontrada" Texto="Tente outro filtro ou outra busca." Tamanho="110" Classe="state-sm" /></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly (string, string)[] Filtros = [("Todas", "Todas"), ("Ativa", "Ativa"), ("Concluida", "Concluída"), ("Cancelada", "Cancelada")];
+    private List<Campanha>? _todas;
+    private string _filtro = "Todas";
+    private string _busca = "";
+    private string? _erro;
+
+    private int Contar(string status) => _todas?.Count(c => status == "Todas" || c.Status == status) ?? 0;
+
+    private IEnumerable<Campanha> Lista => (_todas ?? [])
+        .Where(c => _filtro == "Todas" || c.Status == _filtro)
+        .Where(c => _busca.Trim() is "" || c.Titulo.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || (c.Categoria ?? "").Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase))
+        .OrderBy(c => c.Status == "Ativa" ? 0 : 1).ThenBy(c => c.DataFim);
+
+    protected override Task OnInitializedAsync() => CarregarAsync();
+
+    private void Abrir(Guid id) => Nav.NavigateTo($"gestao/campanhas/{id}");
+
+    private async Task CarregarAsync()
+    {
+        var r = await Api.CampanhasAsync();
+        if (r.Ok) (_todas, _erro) = (r.Valor, null);
+        else _erro = r.Problema!.Mensagem;
+    }
+}

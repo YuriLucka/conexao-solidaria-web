@@ -1,0 +1,247 @@
+@page "/gestao/campanhas/nova"
+@page "/gestao/campanhas/{Id:guid}/editar"
+@layout GestaoLayout
+@attribute [Authorize(Roles = "GestorONG")]
+@inject Api Api
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+<PageTitle>@(Editando ? "Editar campanha" : "Criar campanha") · Gestão · Conexão Solidária</PageTitle>
+
+@if (_naoEncontrada)
+{
+    <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="Ela pode ter sido removida ou o endereço está errado.">
+        <a class="btn btn-primary" href="gestao/campanhas">Ver campanhas</a>
+    </Estado>
+}
+else if (Editando && _original is null)
+{
+    <Carregando Texto="Buscando a campanha" />
+}
+else
+{
+    <a href="@Voltar" class="back" style="margin:0"><Icone Nome="left" Tamanho="16" />@(Editando ? _original!.Titulo : "Campanhas")</a>
+    <div class="g-head">
+        <div>
+            <span class="eyebrow">@(Editando ? "Editar" : "Nova campanha")</span>
+            <h1>@(Editando ? "Editar campanha" : "Criar campanha")</h1>
+            <p>Campos obrigatórios: título, descrição, datas de início e término, meta financeira e status.</p>
+        </div>
+    </div>
+    <div class="form-grid">
+        <form class="card" @onsubmit="SalvarAsync" novalidate>
+            <div class="field">
+                <label for="f-titulo">Título</label>
+                <input type="text" id="f-titulo" maxlength="150" placeholder="Ex.: Volta às Aulas" @bind="_titulo" @bind:event="oninput" aria-invalid="@Inv("titulo")" />
+                <p class="error" id="err-f-titulo">@Erro("titulo")</p>
+            </div>
+            <div class="field">
+                <label for="f-descricao">Descrição</label>
+                <textarea id="f-descricao" maxlength="4000" placeholder="Conte para quem a campanha arrecada, o que será comprado e quantas crianças serão atendidas."
+                          @bind="_descricao" @bind:event="oninput" aria-invalid="@Inv("descricao")"></textarea>
+                <div class="row between"><p class="error" id="err-f-descricao">@Erro("descricao")</p><span class="hint">@_descricao.Length/4000</span></div>
+            </div>
+            <div class="two">
+                <div class="field">
+                    <label for="f-categoria">Categoria <span class="opt">(opcional)</span></label>
+                    <select id="f-categoria" value="@_categoria" @onchange="MudouCategoria">
+                        <option value="">Sem categoria</option>
+                        @foreach (var c in Categorias)
+                        {
+                            <option value="@c">@c</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="f-benef">Crianças atendidas <span class="opt">(opcional)</span></label>
+                    <input type="text" id="f-benef" inputmode="numeric" placeholder="Ex.: 120" @bind="_criancas" @bind:event="oninput" aria-invalid="@Inv("criancas")" />
+                    <p class="error">@Erro("criancas")</p>
+                </div>
+            </div>
+            <div class="field">
+                <span class="lbl" id="lbl-capa">Capa</span>
+                <p class="hint">Escolha uma capa da coleção. Ela aparece no card e na página da campanha. Ao trocar a categoria, sugerimos uma capa até você escolher outra.</p>
+                <div class="capas" role="radiogroup" aria-labelledby="lbl-capa">
+                    @foreach (var (id, nome) in Arte.Capas)
+                    {
+                        <label class="capa-opt">
+                            <input type="radio" name="f-capa" id="f-capa-@id" value="@id" checked="@(_capa == id)" @onchange="() => EscolherCapa(id)" />
+                            <span class="capa-thumb"><Capa Escolhida="@id" /><span class="capa-check"><Icone Nome="check" Tamanho="14" /></span></span>
+                            <span class="capa-nome">@nome</span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <div class="two">
+                <div class="field">
+                    <label for="f-inicio">Data de início</label>
+                    @* Data com máscara (dd/mm/aaaa) em vez de datetime-local: funciona igual em qualquer navegador. *@
+                    <input type="text" id="f-inicio" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" value="@_inicio" @oninput="e => _inicio = Formatos.MascaraData(e.Value?.ToString())" aria-invalid="@Inv("inicio")" aria-describedby="hint-datas" />
+                    <p class="error" id="err-f-inicio">@Erro("inicio")</p>
+                </div>
+                <div class="field">
+                    <label for="f-fim">Data de término</label>
+                    <input type="text" id="f-fim" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" value="@_fim" @oninput="e => _fim = Formatos.MascaraData(e.Value?.ToString())" aria-invalid="@Inv("fim")" aria-describedby="hint-datas" />
+                    <p class="error" id="err-f-fim">@Erro("fim")</p>
+                </div>
+            </div>
+            <p class="hint" id="hint-datas" style="margin-top:-6px">Horário de Brasília: a campanha começa às 00:00 do dia de início e termina às 23:59 do dia de término.</p>
+            <div class="field">
+                <label for="f-meta">Meta financeira</label>
+                <div class="money-input"><span>R$</span><input type="text" id="f-meta" inputmode="decimal" placeholder="0,00" @bind="_meta" @bind:event="oninput" aria-invalid="@Inv("meta")" /></div>
+                <p class="error" id="err-f-meta">@Erro("meta")</p>
+            </div>
+            <div class="field">
+                <span class="lbl" id="lbl-status">Status</span>
+                <div class="seg" role="radiogroup" aria-labelledby="lbl-status">
+                    @foreach (var (s, rotulo) in Status)
+                    {
+                        <label><input type="radio" name="f-status" id="f-st-@s" value="@s" checked="@(_status == s)" disabled="@(!Editando && s != "Ativa")" @onchange="() => _status = s" />@rotulo</label>
+                    }
+                </div>
+                @if (!Editando)
+                {
+                    <p class="hint">Uma campanha nova sempre começa como Ativa. Concluir ou cancelar fica disponível na edição.</p>
+                }
+            </div>
+            @if (_erroGeral is not null)
+            {
+                <div class="form-error" role="alert">@_erroGeral</div>
+            }
+            <div class="form-foot">
+                <a class="btn btn-ghost" href="@Voltar">Cancelar</a>
+                <button type="submit" class="btn btn-primary" disabled="@_salvando"><Icone Nome="check" Tamanho="17" />@(_salvando ? "Salvando…" : Editando ? "Salvar alterações" : "Criar campanha")</button>
+            </div>
+        </form>
+        <div class="preview-wrap">
+            <span class="eyebrow">Prévia no painel público</span>
+            <div id="preview">
+                <CardCampanha Titulo="@_titulo" Descricao="@_descricao" Meta="@(MetaValor ?? 0)" Arrecadado="@(_original?.ValorTotalArrecadado ?? 0)"
+                              DataFim="@(FimUtc ?? DateTime.UtcNow.AddDays(60))" PrazoEncerrado="false" Status="@_status" Categoria="@NullSeVazio(_categoria)" CapaId="@_capa" />
+            </div>
+            <div class="card rules" id="rules">
+                <b class="small">Antes de publicar</b>
+                <Regra Ok="@FimNoFuturo" Texto="Data de término no futuro" />
+                <Regra Ok="@(FimUtc is not null && InicioUtc is not null && FimUtc > InicioUtc)" Texto="Término depois do início" />
+                <Regra Ok="@(MetaValor > 0)" Texto="Meta financeira maior que zero" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private static readonly string[] Categorias = ["Datas especiais", "Educação", "Infraestrutura", "Saúde", "Alimentação", "Esporte e lazer", "Inverno"];
+    private static readonly (string, string)[] Status = [("Ativa", "Ativa"), ("Concluida", "Concluída"), ("Cancelada", "Cancelada")];
+
+    private Campanha? _original;
+    private bool _naoEncontrada, _salvando, _capaManual;
+    private string _titulo = "", _descricao = "", _categoria = "Educação", _capa = "livros", _criancas = "", _meta = "", _status = "Ativa";
+    private string _inicio = "", _fim = "";
+    private string? _erroGeral;
+    private Dictionary<string, string> _erros = new();
+
+    private bool Editando => Id is not null;
+    private string Voltar => Editando ? $"gestao/campanhas/{Id}" : "gestao/campanhas";
+    private string? Erro(string c) => _erros.GetValueOrDefault(c);
+    private string Inv(string c) => _erros.ContainsKey(c) ? "true" : "false";
+    private static string? NullSeVazio(string s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+    private decimal? MetaValor => Formatos.LerDinheiro(_meta);
+    // Na edição, data não alterada mantém o horário original (a API só exige término futuro quando ele muda).
+    private DateTime? InicioUtc => Editando && _inicio == ParaInput(_original!.DataInicio) ? _original.DataInicio : LerDia(_inicio, TimeSpan.Zero);
+    private DateTime? FimUtc => Editando && _fim == ParaInput(_original!.DataFim) ? _original.DataFim : LerDia(_fim, new TimeSpan(23, 59, 59));
+    private bool FimInalterado => Editando && _fim == ParaInput(_original!.DataFim);
+    // Término passado só é problema se a campanha seguir (ou voltar a ficar) Ativa com o término alterado ou reaberta.
+    private bool FimNoFuturo => FimUtc is not null && (FimUtc > DateTime.UtcNow
+        || (Editando && (_status != "Ativa" || (_original!.Status == "Ativa" && FimInalterado))));
+
+    // dd/mm/aaaa no horário de Brasília -> UTC.
+    private static DateTime? LerDia(string s, TimeSpan hora) =>
+        DateTime.TryParseExact(s, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
+            ? DateTime.SpecifyKind(d + hora - Formatos.Brasilia, DateTimeKind.Utc) : null;
+    private static string ParaInput(DateTime utc) => Formatos.Data(utc);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Editando)
+        {
+            var agora = DateTime.UtcNow;
+            // Padrão do protótipo: começa hoje e termina em 60 dias.
+            _inicio = ParaInput(agora);
+            _fim = ParaInput(agora.AddDays(60));
+            return;
+        }
+        var r = await Api.CampanhaAsync(Id!.Value);
+        if (!r.Ok) { _naoEncontrada = true; return; }
+        _original = r.Valor!;
+        (_titulo, _descricao, _categoria, _capa, _status) = (_original.Titulo, _original.Descricao, _original.Categoria ?? "", _original.Capa ?? "sol-colinas", _original.Status);
+        _criancas = _original.CriancasAtendidas?.ToString() ?? "";
+        _meta = Formatos.Valor(_original.MetaFinanceira);
+        (_inicio, _fim) = (ParaInput(_original.DataInicio), ParaInput(_original.DataFim));
+        _capaManual = true;
+    }
+
+    private void MudouCategoria(ChangeEventArgs e)
+    {
+        _categoria = e.Value?.ToString() ?? "";
+        if (!_capaManual && Arte.CapaPorCategoria.TryGetValue(_categoria, out var sugerida)) _capa = sugerida;
+    }
+
+    private void EscolherCapa(string id)
+    {
+        _capa = id;
+        _capaManual = true;
+    }
+
+    private bool Validar()
+    {
+        _erros = new();
+        if (string.IsNullOrWhiteSpace(_titulo)) _erros["titulo"] = "Informe o título da campanha.";
+        else if (_titulo.Trim().Length < 5) _erros["titulo"] = "Use pelo menos 5 caracteres no título.";
+        if (string.IsNullOrWhiteSpace(_descricao)) _erros["descricao"] = "Descreva a campanha para os doadores.";
+        else if (_descricao.Trim().Length < 20) _erros["descricao"] = "A descrição precisa de pelo menos 20 caracteres.";
+        if (InicioUtc is null) _erros["inicio"] = "Informe a data de início no formato dd/mm/aaaa.";
+        if (FimUtc is null) _erros["fim"] = "Informe a data de término no formato dd/mm/aaaa.";
+        else if (!FimNoFuturo) _erros["fim"] = Editando ? "Uma campanha ativa não pode ter data de término no passado." : "A data de término não pode estar no passado.";
+        else if (InicioUtc is not null && FimUtc <= InicioUtc) _erros["fim"] = "A data de término precisa ser depois da data de início.";
+        if (MetaValor is not > 0) _erros["meta"] = "A meta financeira precisa ser maior que zero.";
+        if (_criancas.Trim() != "" && !int.TryParse(_criancas.Trim(), out _)) _erros["criancas"] = "Use só números.";
+        return _erros.Count == 0;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _erroGeral = null;
+        if (!Validar()) return;
+
+        var pedido = new SalvarCampanhaRequest(
+            _titulo.Trim(), _descricao.Trim(),
+            // Sem fuso: a API interpreta como horário de Brasília.
+            DateTime.SpecifyKind(InicioUtc!.Value + Formatos.Brasilia, DateTimeKind.Unspecified),
+            DateTime.SpecifyKind(FimUtc!.Value + Formatos.Brasilia, DateTimeKind.Unspecified),
+            MetaValor!.Value, Editando ? _status : null, NullSeVazio(_categoria), _capa,
+            int.TryParse(_criancas.Trim(), out var n) ? n : null);
+
+        _salvando = true;
+        var r = Editando ? await Api.AtualizarCampanhaAsync(Id!.Value, pedido) : await Api.CriarCampanhaAsync(pedido);
+        _salvando = false;
+
+        if (r.Ok)
+        {
+            Avisos.Ok(Editando ? "Alterações salvas." : "Campanha criada! Ela já aparece no painel público.");
+            Nav.NavigateTo($"gestao/campanhas/{r.Valor!.Id}");
+            return;
+        }
+
+        // Mensagem da API (400) no campo certo.
+        var m = r.Problema!.Mensagem;
+        if (m.Contains("término", StringComparison.OrdinalIgnoreCase)) _erros["fim"] = m;
+        else if (m.Contains("início", StringComparison.OrdinalIgnoreCase)) _erros["inicio"] = m;
+        else if (m.Contains("meta", StringComparison.OrdinalIgnoreCase)) _erros["meta"] = m;
+        else if (m.Contains("Título", StringComparison.OrdinalIgnoreCase)) _erros["titulo"] = m;
+        else if (m.Contains("Descrição", StringComparison.OrdinalIgnoreCase)) _erros["descricao"] = m;
+        else _erroGeral = m;
+    }
+}

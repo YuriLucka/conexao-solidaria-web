@@ -5,6 +5,15 @@
 @inject NavigationManager Nav
 @inject Avisos Avisos
 
+@if (!Sessao.EhGestor)
+{
+    @* Sem perfil de gestão (o conteúdo aqui é o aviso de acesso restrito): mostra o site público em volta. *@
+    <BarraSuperior />
+    <main>@Body</main>
+    <Rodape />
+    <ListaAvisos />
+    return;
+}
 <div class="g-shell">
     <aside class="g-side">
         <a href="gestao" class="brand" aria-label="Conexão Solidária, gestão"><Logo Tamanho="30" /></a>
