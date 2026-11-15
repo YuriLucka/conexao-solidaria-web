@@ -1,0 +1,62 @@
+@* Opção "Instalar app" (PWA), sem modal automático. Só aparece quando o navegador permite instalar (Android/Chromium)
+   ou no iPhone, onde mostra o passo a passo do Safari. Some quando o site já está instalado. *@
+@implements IDisposable
+@inject IJSRuntime Js
+
+@if (_estado is "pronto" or "ios")
+{
+    @if (Icone)
+    {
+        <button class="btn-icon" @onclick="InstalarAsync" aria-label="Instalar app" title="Instalar app"><Icone Nome="instalar" Tamanho="17" /></button>
+    }
+    else
+    {
+        <button class="instalar-item" @onclick="InstalarAsync"><Icone Nome="instalar" Tamanho="17" />Instalar app</button>
+    }
+}
+@if (_mostrarIos)
+{
+    <div class="modal-bg" @onclick="() => _mostrarIos = false">
+        <div class="modal instalar-ios" role="dialog" aria-modal="true" aria-labelledby="ios-t" @onclick:stopPropagation="true">
+            <h2 id="ios-t">Instalar no iPhone</h2>
+            <ol>
+                <li>No Safari, toque em <b>Compartilhar</b> (o quadrado com a seta para cima).</li>
+                <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
+                <li>Toque em <b>Adicionar</b>. O ícone da Conexão Solidária aparece junto dos seus apps.</li>
+            </ol>
+            <div class="row"><button class="btn btn-primary" @onclick="() => _mostrarIos = false">Entendi</button></div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Icone { get; set; }
+
+    private string _estado = "indisponivel";
+    private bool _mostrarIos;
+    private DotNetObjectReference<InstalarApp>? _ref;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _ref = DotNetObjectReference.Create(this);
+        try { _estado = await Js.InvokeAsync<string>("csInstalar.estado", _ref); }
+        catch (JSException) { return; }
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void Atualizar(string estado)
+    {
+        _estado = estado;
+        StateHasChanged();
+    }
+
+    private async Task InstalarAsync()
+    {
+        if (_estado == "ios") { _mostrarIos = true; return; }
+        _estado = await Js.InvokeAsync<string>("csInstalar.instalar");
+    }
+
+    public void Dispose() => _ref?.Dispose();
+}

@@ -2,7 +2,9 @@
 @{
     const int largura = 720, altura = 230, esq = 44, dir = 8, topo = 14, baixo = 26;
     var n = Math.Max(1, Dias.Count);
-    var maximo = Math.Max(1m, Dias.Count == 0 ? 0 : Dias.Max(d => d.Valor));
+    // Escala mínima de R$ 100: com valores muito baixos o eixo não repete "0, 0, 1, 1".
+    var maximo = Math.Max(100m, Dias.Count == 0 ? 0 : Dias.Max(d => d.Valor));
+    var vazio = Dias.All(d => d.Valor == 0);
     var passo = PassoBonito((double)maximo / 4);
     var teto = Math.Ceiling((double)maximo / passo) * passo;
     var areaW = largura - esq - dir;
@@ -12,6 +14,12 @@
     var cada = Math.Max(1, (int)Math.Ceiling(n / 8.0));
     string F(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }
+@if (vazio)
+{
+    <div class="chart-vazio"><Icone Nome="activity" Tamanho="20" /><span>Nenhuma doação confirmada nestes dias. O gráfico aparece com a primeira doação.</span></div>
+}
+else
+{
 <div class="chart">
     <svg viewBox="0 0 @largura @altura" style="width:100%;height:auto;display:block" role="img" aria-label="@Titulo">
         @for (var i = 0; i <= 4; i++)
@@ -50,6 +58,7 @@
         </table>
     </div>
 </details>
+}
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<ArrecadacaoDia> Dias { get; set; } = [];

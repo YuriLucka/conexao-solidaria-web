@@ -16,11 +16,12 @@ const aparelhos = [
   { nome: 'ipad', motor: webkit, opcoes: devices['iPad (gen 7)'] },
   { nome: 'iphone15', motor: webkit, opcoes: devices['iPhone 15'] },
   { nome: 'iphonese', motor: webkit, opcoes: devices['iPhone SE'] },
+  { nome: 'android', motor: chromium, opcoes: devices['Pixel 7'] },
 ];
 
 // perfil: null (anônimo), 'doador' ou 'gestor'
 const telas = [
-  { nome: 'painel', rota: '/', perfil: null, espera: '.grid-cards' },
+  { nome: 'painel', rota: '/', perfil: null, espera: '.grid-cards, .section .state' },
   { nome: 'campanha', rota: 'PRIMEIRA_CAMPANHA', perfil: null, espera: '.camp-layout' },
   { nome: 'campanha-doador', rota: 'PRIMEIRA_CAMPANHA', perfil: 'doador', espera: '.donate-card' },
   { nome: 'como-funciona', rota: '/como-funciona', perfil: null, espera: '.howto' },
@@ -69,18 +70,22 @@ for (const ap of aparelhos) {
 
     for (const t of daVez) {
       erros.length = 0;
-      if (t.rota === 'PRIMEIRA_CAMPANHA' && !primeiraCampanha) {
+      if (t.rota === 'PRIMEIRA_CAMPANHA' && primeiraCampanha === null) {
         await page.goto(`${base}/`);
-        await page.waitForSelector('.camp-card h3 a');
-        primeiraCampanha = new URL(await page.getAttribute('.camp-card h3 a', 'href'), `${base}/`).pathname;
+        try {
+          await page.waitForSelector('.camp-card h3 a', { timeout: 15000 });
+          primeiraCampanha = new URL(await page.getAttribute('.camp-card h3 a', 'href'), `${base}/`).pathname;
+        } catch { primeiraCampanha = ''; } // banco sem campanhas: as telas de campanha ficam de fora
       }
+      if (t.rota === 'PRIMEIRA_CAMPANHA' && primeiraCampanha === '') continue;
       if (t.rota === 'PRIMEIRA_CAMPANHA_GESTAO' && !primeiraGestao) {
         await page.goto(`${base}/gestao/campanhas`);
         try {
           await page.waitForSelector('td a[href^="gestao/campanhas/"]', { timeout: 15000 });
           primeiraGestao = '/' + await page.getAttribute('td a[href^="gestao/campanhas/"]', 'href');
-        } catch { primeiraGestao = '/gestao/campanhas'; }
+        } catch { primeiraGestao = ''; }
       }
+      if (t.rota === 'PRIMEIRA_CAMPANHA_GESTAO' && primeiraGestao === '') continue;
       const rota = t.rota === 'PRIMEIRA_CAMPANHA' ? primeiraCampanha : t.rota === 'PRIMEIRA_CAMPANHA_GESTAO' ? primeiraGestao : t.rota;
       await page.goto(`${base}${rota}`);
       // Uma nova tentativa antes de acusar: com a máquina carregada (Docker + 5 navegadores),

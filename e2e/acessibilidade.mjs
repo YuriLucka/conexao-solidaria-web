@@ -17,7 +17,7 @@ const temas = ['light', 'dark'];
 
 // perfil: null (anônimo), 'doador' ou 'gestor'
 const telas = [
-  { nome: 'painel', rota: '/', perfil: null, espera: '.grid-cards' },
+  { nome: 'painel', rota: '/', perfil: null, espera: '.grid-cards, .section .state' },
   { nome: 'campanha', rota: 'PRIMEIRA_CAMPANHA', perfil: null, espera: '.camp-layout' },
   { nome: 'campanha-doador', rota: 'PRIMEIRA_CAMPANHA', perfil: 'doador', espera: '.donate-card' },
   { nome: 'como-funciona', rota: '/como-funciona', perfil: null, espera: '.howto' },

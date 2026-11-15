@@ -45,7 +45,7 @@ else
         <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val tnum">@Formatos.DinheiroInteiro(r.Arrecadado)</span><Variacao Atual="r.Arrecadado" Anterior="r.ArrecadadoPeriodoAnterior" Dias="r.Dias" /></div>
         <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val tnum">@Formatos.Numero(r.DoacoesConfirmadas)</span><Variacao Atual="r.DoacoesConfirmadas" Anterior="r.DoacoesConfirmadasPeriodoAnterior" Dias="r.Dias" /></div>
         <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(r.DoadoresUnicos)</span><Variacao Atual="r.DoadoresUnicos" Anterior="r.DoadoresUnicosPeriodoAnterior" Dias="r.Dias" /></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(r.TicketMedio)</span><Variacao Atual="r.TicketMedio" Anterior="r.TicketMedioPeriodoAnterior" Dias="r.Dias" /></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@(r.DoacoesConfirmadas == 0 ? "—" : Formatos.Dinheiro(r.TicketMedio))</span><Variacao Atual="r.TicketMedio" Anterior="r.TicketMedioPeriodoAnterior" Dias="r.Dias" /></div>
     </div>
     <div class="dash">
         <div class="stack" style="gap:22px">
@@ -179,7 +179,7 @@ else
             var dias = Formatos.DiasRestantes(c.DataFim);
             var p = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
             if (c.PrazoEncerrado) lista.Add(("warn", c, "está com o prazo encerrado e ainda aparece como Ativa. Conclua ou ajuste o término."));
-            else if (dias <= 14 && p < 1) lista.Add(("warn", c, $"{(dias <= 0 ? "termina hoje" : dias == 1 ? "termina amanhã" : $"termina em {dias} dias")} e está em {Formatos.Porcentagem(p)} da meta. Faltam {Formatos.DinheiroInteiro(c.MetaFinanceira - c.ValorTotalArrecadado)}."));
+            else if (dias <= 14 && p < 1) lista.Add(("warn", c, $"{(dias <= 0 ? "termina hoje" : dias == 1 ? "termina amanhã" : $"termina em {dias} dias")} e está em {Formatos.Porcentagem(p)} da meta. Faltam {Formatos.DinheiroFalta(c.MetaFinanceira - c.ValorTotalArrecadado)}."));
             else if (p is >= .9 and < 1) lista.Add(("ok", c, "passou de 90% da meta."));
         }
         return lista;

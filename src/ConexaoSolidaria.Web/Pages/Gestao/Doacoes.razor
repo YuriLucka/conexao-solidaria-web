@@ -26,7 +26,7 @@ else
     <div class="tiles">
         <div class="tile hero"><span class="lbl">Total confirmado</span><span class="val">@Formatos.DinheiroInteiro(t.TotalConfirmado)</span><span class="small muted">@(_campanha == "" ? "em todas as campanhas" : "na campanha selecionada")</span></div>
         <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t.Confirmadas)</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(t.TicketMedio)</span></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@(t.Confirmadas == 0 ? "—" : Formatos.Dinheiro(t.TicketMedio))</span></div>
         <div class="tile"><span class="lbl">Em confirmação agora</span><span class="val">@Formatos.Numero(t.Pendentes)</span></div>
     </div>
     <div class="toolbar">

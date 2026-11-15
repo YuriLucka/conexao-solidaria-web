@@ -32,6 +32,7 @@
         <div class="g-user">
             <Avatar Nome="@(Sessao.Nome ?? "")" />
             <div class="grow"><b>@Sessao.Nome</b><small>Equipe da ONG</small></div>
+            <InstalarApp Icone="true" />
             <BotaoTema />
             <button class="btn-icon" @onclick="SairAsync" aria-label="Sair" title="Sair"><Icone Nome="logout" Tamanho="17" /></button>
         </div>

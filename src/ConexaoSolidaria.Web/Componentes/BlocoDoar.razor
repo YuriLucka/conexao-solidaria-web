@@ -49,7 +49,7 @@ else
             <legend>Escolha um valor</legend>
             @foreach (var v in Rapidos)
             {
-                <button type="button" class="amt @(_valor == v ? "on" : "")" @onclick="() => Escolher(v)" aria-pressed="@(_valor == v ? "true" : "false")">R$ @v</button>
+                <button type="button" class="amt @(_valor == v ? "on" : "")" @onclick="() => Escolher(v)" aria-pressed="@(_valor == v ? "true" : "false")">@Formatos.DinheiroInteiro(v)</button>
             }
         </fieldset>
         <div class="field">

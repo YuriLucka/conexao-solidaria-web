@@ -16,6 +16,18 @@
                 <a class="btn btn-ghost btn-lg" href="como-funciona">Como funciona</a>
             </div>
         </div>
+        @if (_ativas is { Count: 0 })
+        {
+            @* Site recém-publicado: em vez de "R$ 0 de R$ 0", um convite. *@
+            <div class="card hero-fig hero-boasvindas">
+                <Sol Expressao="acenando" Tamanho="96" Acenando="true" />
+                <h2>As primeiras campanhas estão chegando</h2>
+                <p class="muted">Assim que a ONG publicar uma campanha, você acompanha aqui quanto cada uma arrecadou, em tempo real.</p>
+                <a class="btn btn-ghost" href="como-funciona">Conheça a ONG</a>
+            </div>
+        }
+        else
+        {
         <div class="card hero-fig">
             <div class="lbl-top"><span class="muted small">Arrecadado nas campanhas ativas</span></div>
             <div class="big tnum"><Contador Valor="Total" Moeda="true" Texto="@Formatos.DinheiroInteiro(Total)" Teste="total-arrecadado" /></div>
@@ -30,6 +42,7 @@
                 <div><strong class="tnum">@Formatos.Numero(_ativas?.Count(c => !c.PrazoEncerrado) ?? 0)</strong><span>recebendo doações</span></div>
             </div>
         </div>
+        }
     </div>
 </section>
 

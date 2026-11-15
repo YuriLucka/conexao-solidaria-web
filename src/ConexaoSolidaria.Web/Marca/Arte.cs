@@ -141,6 +141,9 @@ public static class Arte
         ["activity"] = """
         <path d="M3 12h4l3-8 4 16 3-8h4"/>
         """,
+        ["instalar"] = """
+        <path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>
+        """,
         ["logout"] = """
         <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>
         """,

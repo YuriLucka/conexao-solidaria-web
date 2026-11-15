@@ -44,7 +44,7 @@ else
                     <section class="card juntos">
                         <p class="juntos-tit">@(BateuMeta ? $"“{_campanha.Titulo}” alcançou a meta!" : $"“{_campanha.Titulo}” está em {Formatos.Porcentagem(p)} da meta")</p>
                         <Medidor Progresso="@p" Classe="lg" />
-                        <p class="muted">@(BateuMeta ? "Cada pessoa que doou fez parte disso." : $"Faltam {Formatos.DinheiroInteiro(Math.Max(0, _campanha.MetaFinanceira - _campanha.ValorTotalArrecadado))}.")</p>
+                        <p class="muted">@(BateuMeta ? "Cada pessoa que doou fez parte disso." : $"Faltam {Formatos.DinheiroFalta(_campanha.MetaFinanceira - _campanha.ValorTotalArrecadado)}.")</p>
                     </section>
                 }
                 <figure class="carta">

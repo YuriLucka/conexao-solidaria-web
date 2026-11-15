@@ -131,3 +131,18 @@ html.animar .grid-cards > .camp-card:nth-child(3) { animation-delay: .1s; }
 html.animar .grid-cards > .camp-card:nth-child(n+4) { animation-delay: .15s; }
 @keyframes cs-entra { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .btn, .tile { transition: none; } .btn:active:not(:disabled) { transform: none; } }
+
+/* Gráfico sem dados (site recém-publicado ou período sem doações). */
+.chart-vazio { display: flex; align-items: center; gap: 12px; padding: 26px 18px; border: 1px dashed var(--line-2); border-radius: var(--r); color: var(--muted); font-size: 14px; }
+.chart-vazio .ic { color: var(--verde); flex: none; }
+
+.hero-boasvindas { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.hero-boasvindas h2 { font-size: clamp(20px, 2.4vw, 26px); }
+.hero-boasvindas p { margin: 0; max-width: 40ch; }
+
+/* Opção "Instalar app": no site público só dentro do menu do celular; na gestão, ícone junto do tema. */
+.so-menu { display: none; }
+@media (max-width: 900px) { .so-menu { display: block; } }
+.instalar-item { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 10px 12px; font: 600 15px var(--f-body); color: var(--ink-2); cursor: pointer; border-radius: 10px; }
+.instalar-item:hover { background: var(--surface-2); color: var(--ink); }
+.instalar-ios ol { margin: 6px 0 18px; padding-left: 20px; display: grid; gap: 8px; color: var(--ink-2); }

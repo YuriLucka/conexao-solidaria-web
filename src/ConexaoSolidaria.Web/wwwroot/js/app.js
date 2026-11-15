@@ -44,6 +44,29 @@ window.cs = {
   }
 };
 
+// Instalação como app (PWA). Chromium/Android entregam o evento beforeinstallprompt; no iPhone o Safari não tem
+// botão de instalar, então o site mostra como fazer pelo menu Compartilhar. Sem modal automático: só a opção no menu.
+window.csInstalar = (() => {
+  let aviso = null, ouvinte = null;
+  const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const ios = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const estado = () => instalado() ? 'instalado' : aviso ? 'pronto' : ios() ? 'ios' : 'indisponivel';
+  const avisar = () => ouvinte?.invokeMethodAsync('Atualizar', estado());
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); aviso = e; avisar(); });
+  addEventListener('appinstalled', () => { aviso = null; avisar(); });
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => { }));
+  return {
+    estado: ref => { if (ref) ouvinte = ref; return estado(); },
+    instalar: async () => {
+      if (!aviso) return estado();
+      aviso.prompt();
+      const { outcome } = await aviso.userChoice;
+      aviso = null;
+      return outcome === 'accepted' ? 'instalado' : estado();
+    }
+  };
+})();
+
 // Entrada suave dos blocos marcados com .revelar ao entrarem na tela. Só esconde quando o observador existe
 // (classe "animar" no <html>); com "reduzir movimento" nada se move.
 (() => {

@@ -44,7 +44,7 @@ else
         <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
         <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t?.Confirmadas ?? 0)</span><span class="small muted">@Formatos.Numero(naoConfirmadas) em confirmação ou não @(naoConfirmadas == 1 ? "concluída" : "concluídas")</span></div>
         <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(t?.DoadoresUnicos ?? 0)</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@Formatos.Dinheiro(t?.TicketMedio ?? 0)</span></div>
+        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@((t?.Confirmadas ?? 0) == 0 ? "—" : Formatos.Dinheiro(t!.TicketMedio))</span></div>
     </div>
     <section class="card t-card">
         <div class="card-head"><h2>Doações</h2><span class="muted small">@Formatos.Numero(_doacoes?.Total ?? 0) no total</span></div>

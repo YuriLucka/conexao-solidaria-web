@@ -14,18 +14,23 @@ public static class Formatos
         NumberGroupSeparator = ".",
         CurrencyDecimalSeparator = ",",
         CurrencyGroupSeparator = ".",
-        CurrencySymbol = "R$",
-        CurrencyPositivePattern = 2, // "R$ 1.234,56"
-        CurrencyNegativePattern = 9,
+        // Espaço inseparável depois de "R$": o símbolo nunca fica sozinho numa linha.
+        CurrencySymbol = "R$ ",
+        CurrencyPositivePattern = 0, // "R$ 1.234,56"
+        CurrencyNegativePattern = 1, // "-R$ 1.234,56"
         NumberGroupSizes = [3],
         CurrencyGroupSizes = [3]
     };
 
     public static string Dinheiro(decimal v) => v.ToString("C2", Br);
-    public static string DinheiroInteiro(decimal v) => decimal.Round(v, 0, MidpointRounding.AwayFromZero).ToString("C0", Br);
+    // Valores agregados (totais, metas, arrecadado nos cartões) sem centavos, truncados: o site nunca mostra mais do que entrou.
+    public static string DinheiroInteiro(decimal v) => decimal.Truncate(v).ToString("C0", Br);
+    // Quanto falta para a meta, sem centavos e arredondado para cima: nunca mostra menos do que falta.
+    public static string DinheiroFalta(decimal v) => Math.Ceiling(Math.Max(0, v)).ToString("C0", Br);
     public static string Numero(int v) => v.ToString("N0", Br);
     public static string Valor(decimal v) => v.ToString("N2", Br);
-    public static string Porcentagem(double p) => $"{Math.Round(p * 100):0}%";
+    // Truncada: 99,6% aparece como 99% (a meta só mostra 100% quando foi atingida); abaixo de 1%, "<1%".
+    public static string Porcentagem(double p) => p <= 0 ? "0%" : p < 0.01 ? "<1%" : $"{Math.Floor(p * 100 + 1e-9):0}%";
 
     public static DateTime ParaBrasilia(DateTime utc) => DateTime.SpecifyKind(Utc(utc) + Brasilia, DateTimeKind.Unspecified);
     public static string Data(DateTime utc) => ParaBrasilia(utc).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
