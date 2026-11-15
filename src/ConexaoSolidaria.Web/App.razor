@@ -47,7 +47,7 @@
         if (_pronto && !_aberturaFechada)
         {
             _aberturaFechada = true;
-            try { await Js.InvokeVoidAsync("cs.fecharAbertura"); }
+            try { await Js.InvokeVoidAsync("csFecharAbertura"); }
             catch (JSException) { }
         }
     }

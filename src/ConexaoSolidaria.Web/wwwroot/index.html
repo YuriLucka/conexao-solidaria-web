@@ -35,6 +35,17 @@
         </div>
     </div>
     <div id="app"></div>
+    <script>
+        // Aqui, e não no app.js, para nunca ficar fora de sincronia com esta página (o index.html não vai para o cache).
+        // O App chama ao desenhar a primeira tela; 30 s é só uma saída de segurança se o Blazor não responder.
+        window.csFecharAbertura = () => {
+            const el = document.querySelector('.splash');
+            if (!el) return;
+            el.classList.add('out');
+            setTimeout(() => el.remove(), 600);
+        };
+        setTimeout(window.csFecharAbertura, 30000);
+    </script>
 
     <div id="blazor-error-ui" role="alert">
         Algo deu errado ao carregar a página.

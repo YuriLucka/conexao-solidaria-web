@@ -4,14 +4,6 @@ window.cs = {
   gravar: (chave, valor) => { try { localStorage.setItem(chave, valor); } catch { } },
   apagar: chave => { try { localStorage.removeItem(chave); } catch { } },
 
-  // Esconde a abertura do index.html com a transição do protótipo e a remove em seguida.
-  fecharAbertura: () => {
-    const el = document.querySelector('.splash');
-    if (!el) return;
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 600);
-  },
-
   // Tema igual ao do protótipo: atributo data-cs-tema="escuro" no <html>.
   temaPreferido: () => {
     const salvo = window.cs.ler('conexao-solidaria:tema');
