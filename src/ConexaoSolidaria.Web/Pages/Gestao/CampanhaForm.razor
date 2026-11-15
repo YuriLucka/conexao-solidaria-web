@@ -1,7 +1,7 @@
 @page "/gestao/campanhas/nova"
 @page "/gestao/campanhas/{Id:guid}/editar"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @inject Api Api
 @inject NavigationManager Nav
 @inject Avisos Avisos
@@ -103,9 +103,9 @@ else
                 @if (Editando)
                 {
                 <div class="seg" role="radiogroup" aria-labelledby="lbl-status">
-                    @foreach (var (s, rotulo) in Status)
+                    @foreach (var (s, rotulo) in OpcoesStatus)
                     {
-                        <label><input type="radio" name="f-status" id="f-st-@s" value="@s" checked="@(_status == s)" disabled="@(!Editando && s != "Ativa")" @onchange="() => _status = s" />@rotulo</label>
+                        <label><input type="radio" name="f-status" id="f-st-@s" value="@s" checked="@(_status == s)" @onchange="() => _status = s" />@rotulo</label>
                     }
                 </div>
                 }
@@ -143,11 +143,12 @@ else
     [Parameter] public Guid? Id { get; set; }
 
     private static readonly string[] Categorias = ["Datas especiais", "Educação", "Infraestrutura", "Saúde", "Alimentação", "Esporte e lazer", "Inverno"];
-    private static readonly (string, string)[] Status = [("Ativa", "Ativa"), ("Concluida", "Concluída"), ("Cancelada", "Cancelada")];
+    private static readonly (StatusCampanha, string)[] OpcoesStatus = [(StatusCampanha.Ativa, "Ativa"), (StatusCampanha.Concluida, "Concluída"), (StatusCampanha.Cancelada, "Cancelada")];
 
     private Campanha? _original;
     private bool _naoEncontrada, _salvando, _capaManual;
-    private string _titulo = "", _descricao = "", _categoria = "Educação", _capa = "livros", _criancas = "", _meta = "", _status = "Ativa";
+    private string _titulo = "", _descricao = "", _categoria = "Educação", _capa = "livros", _criancas = "", _meta = "";
+    private StatusCampanha _status = StatusCampanha.Ativa;
     private string _inicio = "", _fim = "";
     private string? _erroGeral, _erroCarga;
     private Dictionary<string, string> _erros = new();
@@ -165,7 +166,7 @@ else
     private bool FimInalterado => Editando && _fim == ParaInput(_original!.DataFim);
     // Término passado só é problema se a campanha seguir (ou voltar a ficar) Ativa com o término alterado ou reaberta.
     private bool FimNoFuturo => FimUtc is not null && (FimUtc > DateTime.UtcNow
-        || (Editando && (_status != "Ativa" || (_original!.Status == "Ativa" && FimInalterado))));
+        || (Editando && (_status != StatusCampanha.Ativa || (_original!.Status == StatusCampanha.Ativa && FimInalterado))));
 
     // dd/mm/aaaa no horário de Brasília -> UTC.
     private static DateTime? LerDia(string s, TimeSpan hora) =>
@@ -237,7 +238,7 @@ else
             // Sem fuso: a API interpreta como horário de Brasília.
             DateTime.SpecifyKind(InicioUtc!.Value + Formatos.Brasilia, DateTimeKind.Unspecified),
             DateTime.SpecifyKind(FimUtc!.Value + Formatos.Brasilia, DateTimeKind.Unspecified),
-            MetaValor!.Value, Editando ? _status : null, NullSeVazio(_categoria), _capa,
+            MetaValor!.Value, Editando ? _status : (StatusCampanha?)null, NullSeVazio(_categoria), _capa,
             int.TryParse(_criancas.Trim(), out var n) ? n : null);
 
         _salvando = true;

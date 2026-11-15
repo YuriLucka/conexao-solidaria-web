@@ -27,8 +27,8 @@ public class Sessao : AuthenticationStateProvider
     public DateTime ExpiraEm { get; private set; }
 
     public bool Logado => Token is not null && ExpiraEm > DateTime.UtcNow;
-    public bool EhGestor => Logado && Perfil == "GestorONG";
-    public bool EhDoador => Logado && Perfil == "Doador";
+    public bool EhGestor => Logado && Perfil == Perfis.GestorONG;
+    public bool EhDoador => Logado && Perfil == Perfis.Doador;
 
     // Para onde voltar depois do login (ex.: a campanha em que a pessoa clicou em "Entrar para doar").
     public string? VoltarPara { get; set; }

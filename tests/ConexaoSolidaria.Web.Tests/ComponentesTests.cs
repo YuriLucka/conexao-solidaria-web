@@ -1,4 +1,5 @@
 using ConexaoSolidaria.Web.Componentes;
+using ConexaoSolidaria.Web.Modelos;
 
 namespace ConexaoSolidaria.Web.Tests;
 
@@ -25,10 +26,10 @@ public class ComponentesTests : BunitContext
     }
 
     [Theory]
-    [InlineData("Ativa", "Ativa", "pill-ok")]
-    [InlineData("Concluida", "Concluída", "pill-info")]
-    [InlineData("Cancelada", "Cancelada", "pill-bad")]
-    public void Selo_do_status_da_campanha(string status, string texto, string classe)
+    [InlineData(StatusCampanha.Ativa, "Ativa", "pill-ok")]
+    [InlineData(StatusCampanha.Concluida, "Concluída", "pill-info")]
+    [InlineData(StatusCampanha.Cancelada, "Cancelada", "pill-bad")]
+    public void Selo_do_status_da_campanha(StatusCampanha status, string texto, string classe)
     {
         var cut = Render<SeloStatus>(p => p.Add(s => s.Status, status));
 
@@ -37,10 +38,10 @@ public class ComponentesTests : BunitContext
     }
 
     [Theory]
-    [InlineData("Pendente", "Em confirmação")]
-    [InlineData("Processada", "Confirmada")]
-    [InlineData("Rejeitada", "Não concluída")]
-    public void Selo_do_andamento_da_doacao(string status, string texto)
+    [InlineData(StatusDoacao.Pendente, "Em confirmação")]
+    [InlineData(StatusDoacao.Processada, "Confirmada")]
+    [InlineData(StatusDoacao.Rejeitada, "Não concluída")]
+    public void Selo_do_andamento_da_doacao(StatusDoacao status, string texto)
         => Assert.Contains(texto, Render<SeloDoacao>(p => p.Add(s => s.Status, status)).Markup);
 
     [Fact]

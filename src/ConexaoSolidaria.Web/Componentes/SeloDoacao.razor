@@ -1,10 +1,10 @@
 @* Selo do andamento da doação: Pendente (na fila do RabbitMQ, aguardando o worker), Processada ou Rejeitada. *@
 @switch (Status)
 {
-    case "Processada":
+    case StatusDoacao.Processada:
         <span class="pill pill-ok"><Icone Nome="check" Tamanho="13" />Confirmada</span>
         break;
-    case "Rejeitada":
+    case StatusDoacao.Rejeitada:
         <span class="pill pill-bad"><Icone Nome="x" Tamanho="13" />Não concluída</span>
         break;
     default:
@@ -13,5 +13,5 @@
 }
 
 @code {
-    [Parameter, EditorRequired] public string Status { get; set; } = "Pendente";
+    [Parameter, EditorRequired] public StatusDoacao Status { get; set; } = StatusDoacao.Pendente;
 }

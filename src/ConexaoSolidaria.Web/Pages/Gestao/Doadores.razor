@@ -1,6 +1,6 @@
 @page "/gestao/doadores"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @implements IDisposable
 @inject Api Api
 

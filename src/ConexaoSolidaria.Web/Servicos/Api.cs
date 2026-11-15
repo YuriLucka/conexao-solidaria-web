@@ -48,7 +48,7 @@ public class Api
     public Task<Resultado<List<Campanha>>> CampanhasAsync() => Enviar<List<Campanha>>(HttpMethod.Get, "api/campanhas");
     public Task<Resultado<Campanha>> CriarCampanhaAsync(SalvarCampanhaRequest r) => Enviar<Campanha>(HttpMethod.Post, "api/campanhas", r);
     public Task<Resultado<Campanha>> AtualizarCampanhaAsync(Guid id, SalvarCampanhaRequest r) => Enviar<Campanha>(HttpMethod.Put, $"api/campanhas/{id}", r);
-    public Task<Resultado<DoacoesGestaoPagina>> DoacoesGestaoAsync(Guid? campanha = null, string? status = null, string? busca = null,
+    public Task<Resultado<DoacoesGestaoPagina>> DoacoesGestaoAsync(Guid? campanha = null, StatusDoacao? status = null, string? busca = null,
         int pagina = 1, int tamanho = 20)
         => Enviar<DoacoesGestaoPagina>(HttpMethod.Get, $"api/doacoes?pagina={pagina}&tamanho={tamanho}"
             + (campanha is null ? "" : $"&idCampanha={campanha}") + (status is null ? "" : $"&status={status}")

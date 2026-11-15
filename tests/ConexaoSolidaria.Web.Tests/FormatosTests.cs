@@ -1,4 +1,5 @@
 using ConexaoSolidaria.Web.Marca;
+using ConexaoSolidaria.Web.Modelos;
 
 namespace ConexaoSolidaria.Web.Tests;
 
@@ -85,11 +86,11 @@ public class FormatosTests
     [Fact]
     public void Prazo_mostra_os_estados_da_campanha()
     {
-        Assert.Equal("Cancelada", Formatos.Prazo("Cancelada", DateTime.UtcNow.AddDays(5), false));
+        Assert.Equal("Cancelada", Formatos.Prazo(StatusCampanha.Cancelada, DateTime.UtcNow.AddDays(5), false));
         var ontem = DateTime.UtcNow.AddDays(-1);
-        Assert.Equal($"Terminou em {Formatos.Data(ontem)}", Formatos.Prazo("Ativa", ontem, true));
-        Assert.Equal("Termina amanhã", Formatos.Prazo("Ativa", DateTime.UtcNow.AddHours(20), false));
-        Assert.Equal("Faltam 10 dias", Formatos.Prazo("Ativa", DateTime.UtcNow.AddDays(9.5), false));
+        Assert.Equal($"Terminou em {Formatos.Data(ontem)}", Formatos.Prazo(StatusCampanha.Ativa, ontem, true));
+        Assert.Equal("Termina amanhã", Formatos.Prazo(StatusCampanha.Ativa, DateTime.UtcNow.AddHours(20), false));
+        Assert.Equal("Faltam 10 dias", Formatos.Prazo(StatusCampanha.Ativa, DateTime.UtcNow.AddDays(9.5), false));
     }
 
     [Theory]

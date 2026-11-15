@@ -1,5 +1,5 @@
 @page "/doacoes/{Id:guid}"
-@attribute [Authorize(Roles = "Doador")]
+@attribute [Authorize(Roles = Perfis.Doador)]
 @implements IAsyncDisposable
 @inject Api Api
 @inject Sessao Sessao
@@ -27,8 +27,8 @@ else if (_doacao is null)
 else
 {
     var d = _doacao;
-    var ok = d.Status == "Processada";
-    var falhou = d.Status == "Rejeitada";
+    var ok = d.Status == StatusDoacao.Processada;
+    var falhou = d.Status == StatusDoacao.Rejeitada;
     <div class="wrap">
         <div class="status-wrap">
             @if (ok)
@@ -113,7 +113,7 @@ else
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         try
         {
-            while (!_naoEncontrada && _doacao is null or { Status: "Pendente" } && await timer.WaitForNextTickAsync(_cts.Token))
+            while (!_naoEncontrada && _doacao is null or { Status: StatusDoacao.Pendente } && await timer.WaitForNextTickAsync(_cts.Token))
             {
                 await CarregarAsync();
                 await InvokeAsync(StateHasChanged);

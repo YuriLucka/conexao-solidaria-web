@@ -1,6 +1,6 @@
 @page "/gestao/campanhas/{Id:guid}"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @implements IAsyncDisposable
 @inject Api Api
 @inject Avisos Avisos
@@ -33,10 +33,10 @@ else
         <div class="g-actions">
             <a class="btn btn-ghost" href="campanhas/@c.Id"><Icone Nome="globe" Tamanho="16" />Ver no painel público</a>
             <a class="btn btn-ghost" href="gestao/campanhas/@c.Id/editar"><Icone Nome="edit" Tamanho="16" />Editar</a>
-            @if (c.Status == "Ativa")
+            @if (c.Status == StatusCampanha.Ativa)
             {
-                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Concluida"))"><Icone Nome="check" Tamanho="16" />Concluir</button>
-                <button class="btn btn-quiet btn-perigo" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar campanha</button>
+                <button class="btn btn-quiet" @onclick="@(() => Perguntar(StatusCampanha.Concluida))"><Icone Nome="check" Tamanho="16" />Concluir</button>
+                <button class="btn btn-quiet btn-perigo" @onclick="@(() => Perguntar(StatusCampanha.Cancelada))"><Icone Nome="x" Tamanho="16" />Cancelar campanha</button>
             }
         </div>
     </div>
@@ -71,9 +71,9 @@ else
         <Paginador Pagina="_pagina" Total="_doacoes?.Total ?? 0" Tamanho="PorPagina" AoMudar="IrParaAsync" />
     </section>
     <Confirmacao Aberta="@(_pergunta is not null)" Ocupado="_salvando"
-                 Titulo="@(_pergunta == "Concluida" ? "Concluir esta campanha?" : "Cancelar esta campanha?")"
-                 Texto="@(_pergunta == "Concluida" ? "Ela sai do painel público e para de receber doações. O valor arrecadado fica registrado. É possível reabri-la depois, se a data de término ainda não tiver passado." : "Ela sai do painel público e para de receber doações. Doações ainda em confirmação não serão somadas.")"
-                 Ok="@(_pergunta == "Concluida" ? "Concluir" : "Cancelar campanha")" Perigo="@(_pergunta == "Cancelada")"
+                 Titulo="@(_pergunta == StatusCampanha.Concluida ? "Concluir esta campanha?" : "Cancelar esta campanha?")"
+                 Texto="@(_pergunta == StatusCampanha.Concluida ? "Ela sai do painel público e para de receber doações. O valor arrecadado fica registrado. É possível reabri-la depois, se a data de término ainda não tiver passado." : "Ela sai do painel público e para de receber doações. Doações ainda em confirmação não serão somadas.")"
+                 Ok="@(_pergunta == StatusCampanha.Concluida ? "Concluir" : "Cancelar campanha")" Perigo="@(_pergunta == StatusCampanha.Cancelada)"
                  AoConfirmar="MudarStatusAsync" AoVoltar="() => _pergunta = null" />
 }
 
@@ -85,7 +85,7 @@ else
     private DoacoesGestaoPagina? _doacoes;
     private int _pagina = 1;
     private bool _naoEncontrada, _salvando;
-    private string? _pergunta;
+    private StatusCampanha? _pergunta;
     private readonly CancellationTokenSource _cts = new();
 
     protected override async Task OnInitializedAsync()
@@ -111,7 +111,7 @@ else
         await CarregarAsync();
     }
 
-    private void Perguntar(string status) => _pergunta = status;
+    private void Perguntar(StatusCampanha status) => _pergunta = status;
 
     // Concluir/cancelar = PUT com os mesmos dados e o novo status.
     private async Task MudarStatusAsync()
@@ -124,7 +124,7 @@ else
         _salvando = false;
         if (r.Ok)
         {
-            Avisos.Ok(novo == "Concluida" ? "Campanha concluída." : "Campanha cancelada.");
+            Avisos.Ok(novo == StatusCampanha.Concluida ? "Campanha concluída." : "Campanha cancelada.");
             _campanha = r.Valor;
         }
         else Avisos.Erro(r.Problema!.Mensagem);

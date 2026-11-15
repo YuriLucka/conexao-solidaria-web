@@ -32,7 +32,7 @@ else
 {
     var c = _campanha;
     var progresso = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
-    var aceita = c.Status == "Ativa" && !c.PrazoEncerrado;
+    var aceita = c.Status == StatusCampanha.Ativa && !c.PrazoEncerrado;
     var longa = c.Descricao.Length > LimiteDescricao;
     <div class="wrap section">
         <a href="" class="back"><Icone Nome="left" Tamanho="16" />Campanhas</a>

@@ -4,7 +4,7 @@
 @inject NavigationManager Nav
 @inject Avisos Avisos
 
-@if (Campanha.Status == "Concluida" && Formatos.Progresso(Campanha.ValorTotalArrecadado, Campanha.MetaFinanceira) >= 1)
+@if (Campanha.Status == StatusCampanha.Concluida && Formatos.Progresso(Campanha.ValorTotalArrecadado, Campanha.MetaFinanceira) >= 1)
 {
     <div class="meta-batida">
         <Sol Expressao="comemorando" Tamanho="96" />
@@ -12,11 +12,11 @@
     </div>
     <a class="btn btn-ghost btn-block" style="margin-top:10px" href="">Ver campanhas ativas</a>
 }
-else if (Campanha.Status != "Ativa")
+else if (Campanha.Status != StatusCampanha.Ativa)
 {
-    <div class="notice @(Campanha.Status == "Cancelada" ? "bad" : "")" style="margin-top:16px">
+    <div class="notice @(Campanha.Status == StatusCampanha.Cancelada ? "bad" : "")" style="margin-top:16px">
         <Icone Nome="info" />
-        <div>Esta campanha foi @(Campanha.Status == "Concluida" ? "concluída" : "cancelada") e não recebe novas doações.</div>
+        <div>Esta campanha foi @(Campanha.Status == StatusCampanha.Concluida ? "concluída" : "cancelada") e não recebe novas doações.</div>
     </div>
     <a class="btn btn-ghost btn-block" style="margin-top:10px" href="">Ver campanhas ativas</a>
 }

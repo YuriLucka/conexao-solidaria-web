@@ -1,6 +1,6 @@
 @page "/gestao"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @implements IAsyncDisposable
 @inject Api Api
 @inject Sessao Sessao
@@ -40,7 +40,7 @@ else if (_resumo is null || _campanhas is null)
 else
 {
     var r = _resumo;
-    var ativas = _campanhas.Where(c => c.Status == "Ativa").OrderBy(c => c.PrazoEncerrado).ThenBy(c => c.DataFim).ToList();
+    var ativas = _campanhas.Where(c => c.Status == StatusCampanha.Ativa).OrderBy(c => c.PrazoEncerrado).ThenBy(c => c.DataFim).ToList();
     <div class="tiles">
         <div class="tile hero"><span class="lbl"><span class="tile-ic ic-verde"><Icone Nome="moeda" Tamanho="16" /></span>Arrecadado</span><span class="val tnum">@Formatos.DinheiroInteiro(r.Arrecadado)</span><Variacao Atual="r.Arrecadado" Anterior="r.ArrecadadoPeriodoAnterior" Dias="r.Dias" /></div>
         <div class="tile"><span class="lbl"><span class="tile-ic ic-coral"><Icone Nome="heart" Tamanho="16" /></span>Doações confirmadas</span><span class="val tnum">@Formatos.Numero(r.DoacoesConfirmadas)</span><Variacao Atual="r.DoacoesConfirmadas" Anterior="r.DoacoesConfirmadasPeriodoAnterior" Dias="r.Dias" /></div>

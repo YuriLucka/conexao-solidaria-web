@@ -1,13 +1,13 @@
 @* Selo do status da campanha. *@
 @switch (Status)
 {
-    case "Concluida":
+    case StatusCampanha.Concluida:
         <span class="pill pill-info"><Icone Nome="check" Tamanho="13" />Concluída</span>
         break;
-    case "Cancelada":
+    case StatusCampanha.Cancelada:
         <span class="pill pill-bad"><Icone Nome="x" Tamanho="13" />Cancelada</span>
         break;
-    case "Ativa" when PrazoEncerrado:
+    case StatusCampanha.Ativa when PrazoEncerrado:
         <span class="pill pill-warn"><Icone Nome="clock" Tamanho="13" />Prazo encerrado</span>
         break;
     default:
@@ -16,6 +16,6 @@
 }
 
 @code {
-    [Parameter, EditorRequired] public string Status { get; set; } = "Ativa";
+    [Parameter, EditorRequired] public StatusCampanha Status { get; set; } = StatusCampanha.Ativa;
     [Parameter] public bool PrazoEncerrado { get; set; }
 }

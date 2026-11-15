@@ -33,7 +33,7 @@
     [Parameter, EditorRequired] public Doacao Doacao { get; set; } = null!;
     [Parameter] public Campanha? Campanha { get; set; }
 
-    private bool Ok => Doacao.Status == "Processada";
-    private bool Falhou => Doacao.Status == "Rejeitada";
+    private bool Ok => Doacao.Status == StatusDoacao.Processada;
+    private bool Falhou => Doacao.Status == StatusDoacao.Rejeitada;
     private static string Hora(DateTime utc) => Formatos.ParaBrasilia(utc).ToString("HH:mm:ss");
 }

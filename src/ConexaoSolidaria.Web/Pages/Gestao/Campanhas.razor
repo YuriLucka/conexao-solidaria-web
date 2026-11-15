@@ -1,6 +1,6 @@
 @page "/gestao/campanhas"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @inject Api Api
 @inject NavigationManager Nav
 
@@ -77,21 +77,22 @@ else
 }
 
 @code {
-    private static readonly (string, string)[] Filtros = [("Todas", "Todas"), ("Ativa", "Ativa"), ("Concluida", "Concluída"), ("Cancelada", "Cancelada")];
+    // null = todas.
+    private static readonly (StatusCampanha?, string)[] Filtros = [(null, "Todas"), (StatusCampanha.Ativa, "Ativa"), (StatusCampanha.Concluida, "Concluída"), (StatusCampanha.Cancelada, "Cancelada")];
     private const int PorPagina = 20;
     private int _pagina = 1;
     private List<Campanha>? _todas;
-    private string _filtro = "Todas";
+    private StatusCampanha? _filtro;
     private string _busca = "";
     private string? _erro;
 
-    private int Contar(string status) => _todas?.Count(c => status == "Todas" || c.Status == status) ?? 0;
+    private int Contar(StatusCampanha? status) => _todas?.Count(c => status is null || c.Status == status) ?? 0;
 
     private IEnumerable<Campanha> Lista => (_todas ?? [])
-        .Where(c => _filtro == "Todas" || c.Status == _filtro)
+        .Where(c => _filtro is null || c.Status == _filtro)
         .Where(c => _busca.Trim() is "" || c.Titulo.Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase)
                     || (c.Categoria ?? "").Contains(_busca.Trim(), StringComparison.OrdinalIgnoreCase))
-        .OrderBy(c => c.Status == "Ativa" ? 0 : 1).ThenBy(c => c.DataFim);
+        .OrderBy(c => c.Status == StatusCampanha.Ativa ? 0 : 1).ThenBy(c => c.DataFim);
 
     protected override Task OnInitializedAsync() => CarregarAsync();
 

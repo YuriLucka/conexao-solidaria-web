@@ -1,6 +1,6 @@
 @page "/gestao/doacoes"
 @layout GestaoLayout
-@attribute [Authorize(Roles = "GestorONG")]
+@attribute [Authorize(Roles = Perfis.GestorONG)]
 @implements IAsyncDisposable
 @inject Api Api
 
@@ -73,21 +73,23 @@ else
 
 @code {
     private const int PorPagina = 20;
-    private static readonly (string, string)[] Situacoes = [("Todas", "Todas"), ("Processada", "Confirmadas"), ("Pendente", "Em confirmação"), ("Rejeitada", "Não concluídas")];
+    // null = todas.
+    private static readonly (StatusDoacao?, string)[] Situacoes = [(null, "Todas"), (StatusDoacao.Processada, "Confirmadas"), (StatusDoacao.Pendente, "Em confirmação"), (StatusDoacao.Rejeitada, "Não concluídas")];
     private DoacoesGestaoPagina? _dados;
     private List<Campanha> _campanhas = [];
-    private string _busca = "", _campanha = "", _situacao = "Todas";
+    private string _busca = "", _campanha = "";
+    private StatusDoacao? _situacao;
     private int _pagina = 1;
     private bool _carregando;
     private string? _erro;
     private CancellationTokenSource? _digitacao;
     private readonly CancellationTokenSource _cts = new();
 
-    private static int Contar(TotaisDoacoes t, string situacao) => situacao switch
+    private static int Contar(TotaisDoacoes t, StatusDoacao? situacao) => situacao switch
     {
-        "Processada" => t.Confirmadas,
-        "Pendente" => t.Pendentes,
-        "Rejeitada" => t.Rejeitadas,
+        StatusDoacao.Processada => t.Confirmadas,
+        StatusDoacao.Pendente => t.Pendentes,
+        StatusDoacao.Rejeitada => t.Rejeitadas,
         _ => t.Confirmadas + t.Pendentes + t.Rejeitadas
     };
 
@@ -103,7 +105,7 @@ else
     private async Task CarregarAsync()
     {
         _carregando = true;
-        var r = await Api.DoacoesGestaoAsync(_campanha == "" ? null : Guid.Parse(_campanha), _situacao == "Todas" ? null : _situacao,
+        var r = await Api.DoacoesGestaoAsync(_campanha == "" ? null : Guid.Parse(_campanha), _situacao,
             _busca, _pagina, PorPagina);
         _carregando = false;
         if (r.Ok) (_dados, _erro) = (r.Valor, null);
@@ -116,7 +118,7 @@ else
         await CarregarAsync();
     }
 
-    private Task MudarSituacaoAsync(string situacao)
+    private Task MudarSituacaoAsync(StatusDoacao? situacao)
     {
         _situacao = situacao;
         return IrParaAsync(1);

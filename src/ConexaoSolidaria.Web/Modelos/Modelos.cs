@@ -14,23 +14,23 @@ public record CampanhaAtiva(
 
 public record Campanha(
     Guid Id, string Titulo, string Descricao, DateTime DataInicio, DateTime DataFim, decimal MetaFinanceira,
-    string Status, decimal ValorTotalArrecadado, bool PrazoEncerrado, string? Categoria, string? Capa, int? CriancasAtendidas);
+    StatusCampanha Status, decimal ValorTotalArrecadado, bool PrazoEncerrado, string? Categoria, string? Capa, int? CriancasAtendidas);
 
 public record SalvarCampanhaRequest(
     string Titulo, string Descricao, DateTime DataInicio, DateTime DataFim, decimal MetaFinanceira,
-    string? Status, string? Categoria, string? Capa, int? CriancasAtendidas);
+    StatusCampanha? Status, string? Categoria, string? Capa, int? CriancasAtendidas);
 
 public record DoacaoRecente(string Doador, decimal Valor, DateTime ProcessadaEm);
 public record DoacoesDaCampanha(int QuantidadeDoacoes, int QuantidadeDoadores, IReadOnlyList<DoacaoRecente> Recentes);
 
 public record CriarDoacaoRequest(Guid IdCampanha, decimal ValorDoacao);
 public record Doacao(
-    Guid Id, Guid IdCampanha, string? TituloCampanha, decimal ValorDoacao, string Status,
+    Guid Id, Guid IdCampanha, string? TituloCampanha, decimal ValorDoacao, StatusDoacao Status,
     string? MotivoRejeicao, DateTime CriadaEm, DateTime? ProcessadaEm);
 
 public record DoacaoGestao(
     Guid Id, Guid IdCampanha, string TituloCampanha, Guid DoadorId, string NomeDoador, decimal ValorDoacao,
-    string Status, string? MotivoRejeicao, DateTime CriadaEm, DateTime? ProcessadaEm);
+    StatusDoacao Status, string? MotivoRejeicao, DateTime CriadaEm, DateTime? ProcessadaEm);
 
 public record DoadorGestao(
     Guid Id, string NomeCompleto, string Email, string CpfMascarado, DateTime CriadoEm,
