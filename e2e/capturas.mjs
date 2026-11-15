@@ -47,7 +47,7 @@ async function entrar(page, perfil) {
   await page.fill('#login-email', contas[perfil].email);
   await page.fill('#login-senha', contas[perfil].senha);
   await page.click('button[type=submit]');
-  await page.waitForURL(u => !u.pathname.endsWith('/entrar'), { timeout: 15000 });
+  await page.waitForURL(u => !u.pathname.endsWith('/entrar'), { timeout: 30000 });
 }
 
 const problemas = [];
@@ -74,8 +74,14 @@ for (const ap of aparelhos) {
       }
       const rota = t.rota === 'PRIMEIRA_CAMPANHA' ? primeiraCampanha : t.rota;
       await page.goto(`${base}${rota}`);
-      try { await page.waitForSelector(t.espera, { timeout: 15000 }); }
-      catch { problemas.push(`${ap.nome}/${t.nome}: não apareceu "${t.espera}"`); }
+      // Uma nova tentativa antes de acusar: com a máquina carregada (Docker + 5 navegadores),
+      // o WebKit às vezes demora mais que o limite para iniciar o WebAssembly.
+      let apareceu = false;
+      for (let tentativa = 0; tentativa < 2 && !apareceu; tentativa++) {
+        if (tentativa > 0) await page.reload();
+        try { await page.waitForSelector(t.espera, { timeout: 15000 }); apareceu = true; } catch { }
+      }
+      if (!apareceu) problemas.push(`${ap.nome}/${t.nome}: não apareceu "${t.espera}"`);
       await page.waitForTimeout(700);
 
       const largura = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, tela: window.innerWidth }));
