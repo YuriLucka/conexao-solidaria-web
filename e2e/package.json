@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "capturas": "node capturas.mjs"
+    "capturas": "node capturas.mjs",
+    "acessibilidade": "node acessibilidade.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "playwright": "1.65.1"
   }
 }

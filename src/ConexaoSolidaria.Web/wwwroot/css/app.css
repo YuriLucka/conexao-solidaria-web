@@ -33,3 +33,12 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* Botão de tema do menu da gestão alinhado com os links (o reset do MudBlazor centraliza botões). */
 .g-theme { justify-content: flex-start; margin: 0; width: 100%; font-family: var(--f-body); }
+
+/* Contraste mínimo WCAG 2.1 AA (4,5:1) no tema claro: textos verdes e coral sobre fundos tintos ficam um tom
+   mais escuros que a cor da marca; no tema escuro as cores do protótipo já passam. */
+:root { --ok: #0B705D; --verde-texto: #0B705D; --coral-texto: #A83C1B; }
+:root[data-cs-tema="escuro"] { --verde-texto: var(--verde); --coral-texto: var(--coral-forte); }
+a { color: var(--verde-texto); }
+.av0 { color: var(--verde-texto); }
+.av1 { color: var(--coral-texto); }
+.cta-band p, .auth-art p { opacity: 1; }

@@ -359,6 +359,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--verde);b
 .g-nav a:hover{background:var(--surface-2);color:var(--ink)}
 .g-nav a.on{background:var(--verde-tinta);color:var(--ink)}
 .g-nav a.on .ic{color:var(--verde)}
+.g-nav a .c{display:none}
 .g-nav .badge{margin-left:auto;background:var(--coral);color:var(--on-coral);font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px}
 .g-nav hr{border:0;border-top:1px solid var(--line);margin:8px 6px}
 .g-theme{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--ink-2);font-weight:550;font-size:14.5px;background:none;border:0;cursor:pointer;text-align:left;white-space:nowrap}
@@ -383,7 +384,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--verde);b
   .g-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px -16px rgb(0 0 0 / .35);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
   .g-nav a{flex-direction:column;justify-content:center;gap:3px;padding:7px 2px;font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;min-height:52px}
   .g-nav a .t{display:none}
-  .g-nav a::after{content:attr(data-short)}
+  .g-nav a .c{display:inline}
   .g-nav hr,.g-nav .g-theme{display:none}
   .g-user .theme-btn{display:inline-grid}
   .g-main{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
