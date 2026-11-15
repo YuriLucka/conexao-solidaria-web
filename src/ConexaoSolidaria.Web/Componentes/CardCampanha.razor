@@ -10,30 +10,36 @@
     <div class="camp-body">
         <h3><a href="@Link">@(string.IsNullOrWhiteSpace(Titulo) ? "Título da campanha" : Titulo)</a></h3>
         <p class="camp-desc">@(string.IsNullOrWhiteSpace(Descricao) ? "A descrição aparece aqui." : Descricao)</p>
-        <Medidor Progresso="@Progresso" Rotulo="@($"{Formatos.Porcentagem(Progresso)} da meta")" />
+        <Medidor Progresso="@Progresso" Encerrado="@(PrazoEncerrado || Status != "Ativa")" Rotulo="@($"{Formatos.Porcentagem(Progresso)} da meta")" />
         <div class="camp-nums">
-            <div><strong class="tnum">@Formatos.DinheiroInteiro(Arrecadado)</strong><span>de @Formatos.DinheiroInteiro(Meta)</span></div>
-            <div class="pct">@Formatos.Porcentagem(Progresso)</div>
+            <div><strong class="tnum valor-arrecadado">@Formatos.DinheiroInteiro(Arrecadado)</strong><span>de @Formatos.DinheiroInteiro(Meta)</span></div>
+            @if (Progresso >= 1)
+            {
+                <span class="pill pill-sol" title="@Formatos.Porcentagem(Progresso) da meta"><Icone Nome="check" Tamanho="13" />Meta batida</span>
+            }
+            else
+            {
+                <div class="pct">@Formatos.Porcentagem(Progresso)</div>
+            }
         </div>
         <div class="camp-foot">
-            <span class="muted small"><Icone Nome="clock" Tamanho="14" /> @Formatos.Prazo(Status, DataFim, PrazoEncerrado)</span>
+            <span class="small @(Urgente ? "prazo-urgente" : "muted")"><Icone Nome="clock" Tamanho="14" /> @Formatos.Prazo(Status, DataFim, PrazoEncerrado)</span>
             @if (Status == "Ativa" && !PrazoEncerrado)
             {
                 <a class="btn btn-doar btn-sm" href="@Link">Doar</a>
             }
-            else if (Status == "Ativa")
-            {
-                <span class="pill pill-warn">Prazo encerrado</span>
-            }
             else
             {
-                <SeloStatus Status="@Status" />
+                <SeloStatus Status="@Status" PrazoEncerrado="PrazoEncerrado" />
             }
         </div>
     </div>
 </article>
 
 @code {
+    // Faltando 3 dias ou menos: prazo em destaque (coral) para quem ainda quer ajudar.
+    private bool Urgente => Status == "Ativa" && !PrazoEncerrado && Formatos.DiasRestantes(DataFim) <= 3;
+
     [Parameter] public Guid? Id { get; set; }
     [Parameter] public string Titulo { get; set; } = "";
     [Parameter] public string Descricao { get; set; } = "";

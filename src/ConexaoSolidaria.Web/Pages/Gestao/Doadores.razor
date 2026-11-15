@@ -24,10 +24,10 @@ else
 {
     var ind = _dados.Indicadores;
     <div class="tiles">
-        <div class="tile"><span class="lbl">Doadores cadastrados</span><span class="val">@Formatos.Numero(ind.Cadastrados)</span></div>
-        <div class="tile"><span class="lbl">Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.DoaramUltimos30Dias)</span></div>
-        <div class="tile"><span class="lbl">Recorrentes (2 ou mais doações)</span><span class="val">@Formatos.Numero(ind.Recorrentes)</span></div>
-        <div class="tile"><span class="lbl">Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.NovosUltimos30Dias)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-info"><Icone Nome="users" Tamanho="16" /></span>Doadores cadastrados</span><span class="val">@Formatos.Numero(ind.Cadastrados)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-coral"><Icone Nome="heart" Tamanho="16" /></span>Doaram nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.DoaramUltimos30Dias)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-verde"><Icone Nome="refresh" Tamanho="16" /></span>Recorrentes (2 ou mais doações)</span><span class="val">@Formatos.Numero(ind.Recorrentes)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-sol"><Icone Nome="plus" Tamanho="16" /></span>Novos nos últimos 30 dias</span><span class="val">@Formatos.Numero(ind.NovosUltimos30Dias)</span></div>
     </div>
     <div class="toolbar">
         <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar doadores" @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync" /></div>

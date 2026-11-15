@@ -90,12 +90,9 @@ h1, h2, .titulo-longo { overflow-wrap: anywhere; }
 .mais-campanhas { display: flex; justify-content: center; margin-top: 22px; }
 .mi-mais { margin: 12px 0 0; }
 
-/* Valores em dinheiro nunca quebram ("R$" separado do número): ficam numa linha e diminuem conforme a
-   largura do cartão (container query), para caber até em milhões no iPhone SE. */
-.tile, .hero-fig { container-type: inline-size; }
-.tile .val { white-space: nowrap; font-size: min(26px, 10.5cqi); }
-.tile.hero .val { font-size: min(clamp(30px, 3.2vw, 40px), 12cqi); }
-.hero-fig .big { white-space: nowrap; font-size: min(clamp(40px, 5vw, 54px), 13cqi); }
+/* Valores em dinheiro nunca quebram ("R$" separado do número): ficam numa linha só. */
+/* O tamanho só diminui quando o valor não cabe (ajuste em app.js, cs.ajustarValores). */
+.tile .val, .hero-fig .big, .donate-card .big { white-space: nowrap; }
 .camp-nums { min-width: 0; }
 .camp-nums strong { white-space: nowrap; }
 .qcount { white-space: nowrap; }
@@ -146,3 +143,72 @@ html.animar .grid-cards > .camp-card:nth-child(n+4) { animation-delay: .15s; }
 .instalar-item { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 10px 12px; font: 600 15px var(--f-body); color: var(--ink-2); cursor: pointer; border-radius: 10px; }
 .instalar-item:hover { background: var(--surface-2); color: var(--ink); }
 .instalar-ios ol { margin: 6px 0 18px; padding-left: 20px; display: grid; gap: 8px; color: var(--ink-2); }
+
+/* ===== Revisão visual (desktop e celular, temas claro e escuro) ===== */
+
+/* Ícone tingido nos indicadores. */
+.tile .lbl { display: flex; align-items: center; gap: 8px; }
+.tile-ic { --c: var(--verde); width: 28px; height: 28px; flex: none; border-radius: 8px; display: inline-grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.tile-ic.ic-verde { --c: var(--verde); }
+.tile-ic.ic-coral { --c: var(--coral-texto); }
+.tile-ic.ic-info { --c: var(--info); }
+.tile-ic.ic-sol { --c: var(--warn); }
+.tile-ic.ic-warn { --c: var(--warn); }
+.tile .val { margin-top: 4px; }
+
+/* Selo "Meta batida" (sol) e barra cinza para campanha encerrada. */
+.pill-sol { background: var(--sol-tinta); color: var(--warn); }
+.meter.encerrado > span { background: var(--line-2); }
+.camp-card .valor-arrecadado { color: var(--verde-texto); }
+.prazo-urgente { color: var(--coral-texto); font-weight: 650; }
+.btn-perigo { color: var(--bad); }
+.btn-perigo:hover { background: var(--bad-bg); color: var(--bad); }
+.nowrap { white-space: nowrap; }
+
+/* Cartões da mesma linha com a barra alinhada, mesmo com título de 1 linha ou descrição curta. */
+.camp-body .meter { margin-top: auto; }
+
+/* Cadastro: "o que pedimos e por quê" — o flex era aplicado também à div interna (quebrava "E-/mail"). */
+.why div { display: block; }
+.why > div { display: flex; gap: 12px; }
+
+/* Rótulos do resumo do painel sem entrelinha exagerada. */
+.hero-stats span { display: block; line-height: 1.3; margin-top: 4px; }
+
+/* Filtro de campanha com aparência própria (o WebKit desenhava uma caixa cinza por trás). */
+.filtro-campanha { -webkit-appearance: none; appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B6F69' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; padding: 10px 40px 10px 16px; border: 1px solid var(--line-2); color: var(--ink); font: 500 14.5px var(--f-body); min-height: 44px; }
+:root[data-cs-tema="escuro"] .filtro-campanha { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239DB3AC' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+
+/* Visão geral: card "Hoje" com divisores e pendências em âmbar; feed sem quebras feias. */
+.hoje { display: flex; flex-wrap: wrap; gap: 14px 0; align-items: flex-start; }
+.hoje > div { padding: 0 18px; }
+.hoje > div:first-child { padding-left: 0; }
+.hoje > div + div { border-left: 1px solid var(--line); }
+.hoje-pend .qcount { color: var(--warn); display: inline-flex; align-items: center; gap: 6px; }
+.feed-txt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-camp { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed li > div:last-child { flex: none; }
+.notice .ic { color: var(--warn); }
+
+/* "Detalhes" com seta. */
+.link-seta { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  /* Filtros em uma linha que rola para o lado, em vez de empilhar. */
+  .chips { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; margin-inline: -2px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips > .chip { flex: none; scroll-snap-align: start; min-height: 40px; }
+  .filtro-campanha { width: 100%; max-width: none; }
+
+  /* Paginação numa linha: "1 de 2.015" no centro, botões nas pontas. */
+  .pager { flex-wrap: wrap; justify-content: space-between; }
+  .pager > span { white-space: nowrap; }
+  .pager .btn { min-height: 44px; }
+
+  /* Listas compactas (doações): sem rótulos repetidos, valor em destaque à direita. */
+  .rtable.compacta tr { padding: 12px 16px; gap: 4px 12px; }
+  .rtable.compacta td[data-label]::before { display: none; }
+}
+
+/* Doações recentes da campanha: valor e tempo empilhados à direita, sem grudar. */
+.doou { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }

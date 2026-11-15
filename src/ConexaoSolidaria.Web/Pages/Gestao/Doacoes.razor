@@ -24,10 +24,10 @@ else
 {
     var t = _dados.Totais;
     <div class="tiles">
-        <div class="tile hero"><span class="lbl">Total confirmado</span><span class="val">@Formatos.DinheiroInteiro(t.TotalConfirmado)</span><span class="small muted">@(_campanha == "" ? "em todas as campanhas" : "na campanha selecionada")</span></div>
-        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t.Confirmadas)</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@(t.Confirmadas == 0 ? "—" : Formatos.Dinheiro(t.TicketMedio))</span></div>
-        <div class="tile"><span class="lbl">Em confirmação agora</span><span class="val">@Formatos.Numero(t.Pendentes)</span></div>
+        <div class="tile hero"><span class="lbl"><span class="tile-ic ic-verde"><Icone Nome="moeda" Tamanho="16" /></span>Total confirmado</span><span class="val">@Formatos.DinheiroInteiro(t.TotalConfirmado)</span><span class="small muted">@(_campanha == "" ? "em todas as campanhas" : "na campanha selecionada")</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-coral"><Icone Nome="heart" Tamanho="16" /></span>Doações confirmadas</span><span class="val">@Formatos.Numero(t.Confirmadas)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-sol"><Icone Nome="recibo" Tamanho="16" /></span>Ticket médio</span><span class="val">@(t.Confirmadas == 0 ? "—" : Formatos.Dinheiro(t.TicketMedio))</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-warn"><Icone Nome="clock" Tamanho="16" /></span>Em confirmação agora</span><span class="val">@Formatos.Numero(t.Pendentes)</span></div>
     </div>
     <div class="toolbar">
         <div class="search"><Icone Nome="search" Tamanho="17" /><input type="search" placeholder="Buscar por doador" aria-label="Buscar doações" @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync" /></div>
@@ -47,16 +47,16 @@ else
     </div>
     <div class="card t-card">
         <div class="tscroll">
-            <table class="table rtable" style="min-width:820px">
+            <table class="table rtable compacta" style="min-width:820px">
                 <thead><tr><th>Data</th><th>Doador</th><th>Campanha</th><th class="num">Valor</th><th>Situação</th></tr></thead>
                 <tbody>
                     @foreach (var d in _dados.Itens)
                     {
                         <tr>
-                            <td class="tnum small" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
+                            <td class="tnum small muted">@Formatos.DataHora(d.CriadaEm)</td>
                             <td class="full first"><div class="person"><Avatar Nome="@d.NomeDoador" /><div class="corta"><b title="@d.NomeDoador">@d.NomeDoador</b></div></div></td>
                             <td class="full o1"><a class="corta-2" href="gestao/campanhas/@d.IdCampanha" title="@d.TituloCampanha">@d.TituloCampanha</a></td>
-                            <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
+                            <td class="num end"><b class="tnum">@Formatos.Dinheiro(d.ValorDoacao)</b></td>
                             <td><SeloDoacao Status="@d.Status" /></td>
                         </tr>
                     }

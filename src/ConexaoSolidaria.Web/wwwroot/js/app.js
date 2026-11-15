@@ -44,6 +44,21 @@ window.cs = {
   }
 };
 
+// Valores grandes ("R$ 18.326.757") ficam numa linha: se não cabem no cartão, a fonte diminui só o necessário.
+(() => {
+  const seletor = '.tile .val, .hero-fig .big, .donate-card .big';
+  const ajustar = el => {
+    el.style.fontSize = '';
+    let t = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth + 1 && t > 14) { t -= 1; el.style.fontSize = t + 'px'; }
+  };
+  let pendente = false;
+  const tudo = () => { if (pendente) return; pendente = true; requestAnimationFrame(() => { pendente = false; document.querySelectorAll(seletor).forEach(ajustar); }); };
+  new MutationObserver(tudo).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  addEventListener('resize', tudo);
+  addEventListener('load', tudo);
+})();
+
 // Instalação como app (PWA). Chromium/Android entregam o evento beforeinstallprompt; no iPhone o Safari não tem
 // botão de instalar, então o site mostra como fazer pelo menu Compartilhar. Sem modal automático: só a opção no menu.
 window.csInstalar = (() => {

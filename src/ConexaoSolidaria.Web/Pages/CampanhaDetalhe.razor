@@ -40,7 +40,7 @@ else
             <div class="camp-main">
                 <div class="camp-hero-cover"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></div>
                 <div class="row">
-                    <SeloStatus Status="@c.Status" />
+                    <SeloStatus Status="@c.Status" PrazoEncerrado="c.PrazoEncerrado" />
                     <span class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{Formatos.Numero(n)} {(n == 1 ? "criança" : "crianças")}" : null }.Where(x => x is not null))</span>
                 </div>
                 <h1>@c.Titulo</h1>
@@ -67,7 +67,7 @@ else
                     {
                         foreach (var d in _doacoes.Recentes)
                         {
-                            <li><Avatar Nome="@d.Doador" /><div class="grow"><b>@d.Doador</b> <span class="muted">doou</span></div><b class="tnum">@Formatos.Dinheiro(d.Valor)</b><time class="muted small">@Formatos.Ha(d.ProcessadaEm)</time></li>
+                            <li><Avatar Nome="@d.Doador" /><div class="grow corta"><b>@d.Doador</b></div><div class="doou"><b class="tnum">@Formatos.Dinheiro(d.Valor)</b><time class="muted small">@Formatos.Ha(d.ProcessadaEm)</time></div></li>
                         }
                     }
                     else

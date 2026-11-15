@@ -46,10 +46,12 @@
     </div>
 </section>
 
+@if (_ativas is not { Count: 0 })
+{
 <section class="wrap section">
     <div class="section-head">
         <h2>Campanhas ativas</h2>
-        <span class="muted small">@(_ativas?.Count ?? 0) @((_ativas?.Count ?? 0) == 1 ? "campanha" : "campanhas") · ordenadas pelo prazo</span>
+        <span class="muted small">@(_ativas?.Count ?? 0) @((_ativas?.Count ?? 0) == 1 ? "campanha" : "campanhas") · abertas primeiro</span>
     </div>
     @if (_erro is not null)
     {
@@ -95,6 +97,7 @@
         }
     }
 </section>
+}
 
 @code {
     // Com muitas campanhas, o painel mostra 12 por vez (mais leve no celular e na atualização a cada 5 s).
@@ -129,7 +132,8 @@
         var r = await Api.CampanhasAtivasAsync();
         if (r.Ok)
         {
-            _ativas = r.Valor!;
+            // Abertas primeiro (pelo prazo); as de prazo encerrado vão para o fim da lista.
+            _ativas = r.Valor!.OrderBy(c => c.PrazoEncerrado).ThenBy(c => c.DataFim).ToList();
             _erro = null;
             _atualizadoEm = DateTime.UtcNow;
         }

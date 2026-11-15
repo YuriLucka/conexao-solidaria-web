@@ -7,6 +7,9 @@
     case "Cancelada":
         <span class="pill pill-bad"><Icone Nome="x" Tamanho="13" />Cancelada</span>
         break;
+    case "Ativa" when PrazoEncerrado:
+        <span class="pill pill-warn"><Icone Nome="clock" Tamanho="13" />Prazo encerrado</span>
+        break;
     default:
         <span class="pill pill-ok"><span class="dot"></span>Ativa</span>
         break;
@@ -14,4 +17,5 @@
 
 @code {
     [Parameter, EditorRequired] public string Status { get; set; } = "Ativa";
+    [Parameter] public bool PrazoEncerrado { get; set; }
 }

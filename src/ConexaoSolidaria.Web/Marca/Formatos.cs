@@ -30,7 +30,7 @@ public static class Formatos
     public static string Numero(int v) => v.ToString("N0", Br);
     public static string Valor(decimal v) => v.ToString("N2", Br);
     // Truncada: 99,6% aparece como 99% (a meta só mostra 100% quando foi atingida); abaixo de 1%, "<1%".
-    public static string Porcentagem(double p) => p <= 0 ? "0%" : p < 0.01 ? "<1%" : $"{Math.Floor(p * 100 + 1e-9):0}%";
+    public static string Porcentagem(double p) => p <= 0 ? "0%" : p < 0.01 ? "<1%" : $"{((long)Math.Floor(p * 100 + 1e-9)).ToString("N0", Br)}%";
 
     public static DateTime ParaBrasilia(DateTime utc) => DateTime.SpecifyKind(Utc(utc) + Brasilia, DateTimeKind.Unspecified);
     public static string Data(DateTime utc) => ParaBrasilia(utc).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
@@ -68,7 +68,8 @@ public static class Formatos
 
     public static string Iniciais(string nome)
     {
-        var p = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Ignora partes que não são nome (números, sufixos): "Bruno Carvalho 2161" -> "BC".
+        var p = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(x => char.IsLetter(x[0])).ToArray();
         if (p.Length == 0) return "";
         return (p.Length > 1 ? $"{p[0][0]}{p[^1][0]}" : $"{p[0][0]}").ToUpperInvariant();
     }

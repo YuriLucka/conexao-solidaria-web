@@ -99,12 +99,16 @@ else
             </div>
             <div class="field">
                 <span class="lbl" id="lbl-status">Status</span>
+                @* Na criação só "Ativa" é possível: o seletor aparece apenas na edição. *@
+                @if (Editando)
+                {
                 <div class="seg" role="radiogroup" aria-labelledby="lbl-status">
                     @foreach (var (s, rotulo) in Status)
                     {
                         <label><input type="radio" name="f-status" id="f-st-@s" value="@s" checked="@(_status == s)" disabled="@(!Editando && s != "Ativa")" @onchange="() => _status = s" />@rotulo</label>
                     }
                 </div>
+                }
                 @if (!Editando)
                 {
                     <p class="hint">Uma campanha nova sempre começa como Ativa. Concluir ou cancelar fica disponível na edição.</p>

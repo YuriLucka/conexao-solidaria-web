@@ -26,7 +26,7 @@ else
     <a href="gestao/campanhas" class="back" style="margin:0"><Icone Nome="left" Tamanho="16" />Campanhas</a>
     <div class="g-head">
         <div>
-            <div class="row"><SeloStatus Status="@c.Status" /><span class="muted small">@c.Categoria</span></div>
+            <div class="row"><SeloStatus Status="@c.Status" PrazoEncerrado="c.PrazoEncerrado" /><span class="muted small">@c.Categoria</span></div>
             <h1 class="titulo-longo">@c.Titulo</h1>
             <p>@Formatos.DataHora(c.DataInicio) até @Formatos.DataHora(c.DataFim) · @Formatos.Prazo(c.Status, c.DataFim, c.PrazoEncerrado)</p>
         </div>
@@ -36,15 +36,15 @@ else
             @if (c.Status == "Ativa")
             {
                 <button class="btn btn-quiet" @onclick="@(() => Perguntar("Concluida"))"><Icone Nome="check" Tamanho="16" />Concluir</button>
-                <button class="btn btn-quiet" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar campanha</button>
+                <button class="btn btn-quiet btn-perigo" @onclick="@(() => Perguntar("Cancelada"))"><Icone Nome="x" Tamanho="16" />Cancelar campanha</button>
             }
         </div>
     </div>
     <div class="tiles">
-        <div class="tile hero"><span class="lbl">Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
-        <div class="tile"><span class="lbl">Doações confirmadas</span><span class="val">@Formatos.Numero(t?.Confirmadas ?? 0)</span><span class="small muted">@Formatos.Numero(naoConfirmadas) em confirmação ou não @(naoConfirmadas == 1 ? "concluída" : "concluídas")</span></div>
-        <div class="tile"><span class="lbl">Doadores únicos</span><span class="val">@Formatos.Numero(t?.DoadoresUnicos ?? 0)</span></div>
-        <div class="tile"><span class="lbl">Ticket médio</span><span class="val">@((t?.Confirmadas ?? 0) == 0 ? "—" : Formatos.Dinheiro(t!.TicketMedio))</span></div>
+        <div class="tile hero"><span class="lbl"><span class="tile-ic ic-verde"><Icone Nome="moeda" Tamanho="16" /></span>Arrecadado</span><span class="val">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado)</span><span class="small muted">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(p)</span><Medidor Progresso="p" Classe="thin" /></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-coral"><Icone Nome="heart" Tamanho="16" /></span>Doações confirmadas</span><span class="val">@Formatos.Numero(t?.Confirmadas ?? 0)</span><span class="small muted">@Formatos.Numero(naoConfirmadas) em confirmação ou não @(naoConfirmadas == 1 ? "concluída" : "concluídas")</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-info"><Icone Nome="users" Tamanho="16" /></span>Doadores únicos</span><span class="val">@Formatos.Numero(t?.DoadoresUnicos ?? 0)</span></div>
+        <div class="tile"><span class="lbl"><span class="tile-ic ic-sol"><Icone Nome="recibo" Tamanho="16" /></span>Ticket médio</span><span class="val">@((t?.Confirmadas ?? 0) == 0 ? "—" : Formatos.Dinheiro(t!.TicketMedio))</span></div>
     </div>
     <section class="card t-card">
         <div class="card-head"><h2>Doações</h2><span class="muted small">@Formatos.Numero(_doacoes?.Total ?? 0) no total</span></div>

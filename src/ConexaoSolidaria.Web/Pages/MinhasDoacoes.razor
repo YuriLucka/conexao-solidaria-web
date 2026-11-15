@@ -22,10 +22,10 @@
     {
         var resumo = _doacoes.Resumo;
         <div class="tiles" style="margin-bottom:22px">
-            <div class="tile hero"><span class="lbl">Total doado</span><span class="val tnum">@Formatos.Dinheiro(resumo.TotalDoado)</span></div>
-            <div class="tile"><span class="lbl">Doações</span><span class="val">@Formatos.Numero(resumo.Confirmadas)</span></div>
-            <div class="tile"><span class="lbl">Campanhas apoiadas</span><span class="val">@Formatos.Numero(resumo.CampanhasApoiadas)</span></div>
-            <div class="tile"><span class="lbl">Em confirmação</span><span class="val">@Formatos.Numero(resumo.Pendentes)</span></div>
+            <div class="tile hero"><span class="lbl"><span class="tile-ic ic-verde"><Icone Nome="moeda" Tamanho="16" /></span>Total doado</span><span class="val tnum">@Formatos.Dinheiro(resumo.TotalDoado)</span></div>
+            <div class="tile"><span class="lbl"><span class="tile-ic ic-coral"><Icone Nome="heart" Tamanho="16" /></span>Doações</span><span class="val">@Formatos.Numero(resumo.Confirmadas)</span></div>
+            <div class="tile"><span class="lbl"><span class="tile-ic ic-info"><Icone Nome="flag" Tamanho="16" /></span>Campanhas apoiadas</span><span class="val">@Formatos.Numero(resumo.CampanhasApoiadas)</span></div>
+            <div class="tile"><span class="lbl"><span class="tile-ic ic-warn"><Icone Nome="clock" Tamanho="16" /></span>Em confirmação</span><span class="val">@Formatos.Numero(resumo.Pendentes)</span></div>
         </div>
 
         @if (resumo.Confirmadas > 0)
@@ -57,17 +57,17 @@
             <h2 style="margin:26px 0 12px;font-size:20px">Histórico</h2>
             <div class="card t-card">
                 <div class="tscroll">
-                    <table class="table rtable" style="min-width:620px">
+                    <table class="table rtable compacta" style="min-width:620px">
                         <thead><tr><th>Data</th><th>Campanha</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead>
                         <tbody>
                             @foreach (var d in _doacoes.Itens)
                             {
                                 <tr>
-                                    <td class="tnum" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
+                                    <td class="tnum small muted">@Formatos.DataHora(d.CriadaEm)</td>
                                     <td class="full first"><a class="corta-2" href="campanhas/@d.IdCampanha" title="@d.TituloCampanha">@d.TituloCampanha</a></td>
-                                    <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
+                                    <td class="num end"><b class="tnum">@Formatos.Dinheiro(d.ValorDoacao)</b></td>
                                     <td><SeloDoacao Status="@d.Status" /></td>
-                                    <td class="num end"><a href="doacoes/@d.Id" class="small">Detalhes</a></td>
+                                    <td class="num end"><a href="doacoes/@d.Id" class="small link-seta" aria-label="Detalhes da doação de @Formatos.DataHora(d.CriadaEm)">Detalhes<Icone Nome="right" Tamanho="14" /></a></td>
                                 </tr>
                             }
                         </tbody>
