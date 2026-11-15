@@ -1,0 +1,12 @@
+<div class="card">
+    <dl class="summary">
+        <div><dt>Campanha</dt><dd><a href="campanhas/@Doacao.IdCampanha">@Doacao.TituloCampanha</a></dd></div>
+        <div><dt>Valor</dt><dd class="tnum">@Formatos.Dinheiro(Doacao.ValorDoacao)</dd></div>
+        <div><dt>Data</dt><dd class="tnum">@Formatos.DataHora(Doacao.CriadaEm)</dd></div>
+        <div><dt>Protocolo</dt><dd class="mono">@Doacao.Id.ToString("N")[..8].ToUpperInvariant()</dd></div>
+    </dl>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Doacao Doacao { get; set; } = null!;
+}

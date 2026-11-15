@@ -1,0 +1,11 @@
+{
+  "name": "conexao-solidaria-web-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capturas": "node capturas.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

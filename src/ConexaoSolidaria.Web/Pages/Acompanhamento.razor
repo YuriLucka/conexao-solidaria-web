@@ -1,0 +1,117 @@
+@page "/doacoes/{Id:guid}"
+@attribute [Authorize(Roles = "Doador")]
+@implements IAsyncDisposable
+@inject Api Api
+@inject Sessao Sessao
+
+<PageTitle>Sua doação · Conexão Solidária</PageTitle>
+
+@if (_naoEncontrada)
+{
+    <div class="wrap">
+        <Estado Expressao="curioso" Titulo="Não encontramos essa doação" Texto="Ela pode pertencer a outra conta.">
+            <a class="btn btn-primary" href="minhas-doacoes">Minhas doações</a>
+        </Estado>
+    </div>
+}
+else if (_doacao is null)
+{
+    <div class="wrap"><Carregando Texto="Buscando sua doação" /></div>
+}
+else
+{
+    var d = _doacao;
+    var ok = d.Status == "Processada";
+    var falhou = d.Status == "Rejeitada";
+    <div class="wrap">
+        <div class="status-wrap">
+            @if (ok)
+            {
+                <div class="status-hero celebrar">
+                    <Sol Expressao="@(BateuMeta ? "comemorando" : "abraco")" Tamanho="170" />
+                    <h1>Obrigado, @Formatos.PrimeiroNome(Sessao.Nome ?? "")! Sua doação chegou.</h1>
+                    <p class="muted" style="max-width:52ch">@Formatos.Dinheiro(d.ValorDoacao) já fazem parte de “@d.TituloCampanha”.</p>
+                </div>
+                @if (_campanha is not null)
+                {
+                    var p = Formatos.Progresso(_campanha.ValorTotalArrecadado, _campanha.MetaFinanceira);
+                    <section class="card juntos">
+                        <p class="juntos-tit">@(BateuMeta ? $"“{_campanha.Titulo}” bateu a meta!" : $"“{_campanha.Titulo}” está em {Formatos.Porcentagem(p)} da meta")</p>
+                        <Medidor Progresso="@p" Classe="lg" />
+                        <p class="muted">@(BateuMeta ? "Cada pessoa que doou fez parte disso." : $"Faltam {Formatos.DinheiroInteiro(Math.Max(0, _campanha.MetaFinanceira - _campanha.ValorTotalArrecadado))}.")</p>
+                    </section>
+                }
+                <figure class="carta">
+                    <blockquote>@Formatos.PrimeiroNome(Sessao.Nome ?? ""), ninguém acolhe 220 crianças sozinho. A gente consegue porque pessoas como você decidem estar junto. Obrigado por hoje.</blockquote>
+                    <figcaption><Avatar Nome="Helena Martins" /><div><b>Helena Martins</b><small>pela equipe da ONG Esperança Solidária</small></div></figcaption>
+                </figure>
+                <div class="row" style="justify-content:center;margin:22px 0">
+                    <a class="btn btn-doar" href="campanhas/@d.IdCampanha"><Icone Nome="heart" Tamanho="17" />Ver a campanha</a>
+                    <a class="btn btn-ghost" href="">Outras campanhas</a>
+                </div>
+                <details class="detalhes"><summary>Detalhes da doação</summary><Passos Doacao="d" Campanha="_campanha" /><Resumo Doacao="d" /></details>
+            }
+            else
+            {
+                <div class="status-hero">
+                    <Sol Expressao="@(falhou ? "preocupado" : "pensando")" Tamanho="150" Girando="@(!falhou)" />
+                    <h1>@(falhou ? "Não foi possível concluir sua doação" : $"Recebemos sua doação de {Formatos.Dinheiro(d.ValorDoacao)}")</h1>
+                    <p class="muted" style="max-width:52ch" aria-live="polite">@(falhou ? "A campanha foi encerrada enquanto sua doação era confirmada. Nenhum valor foi somado." : "Estamos confirmando. Esta página se atualiza sozinha.")</p>
+                </div>
+                <Passos Doacao="d" Campanha="_campanha" />
+                <Resumo Doacao="d" />
+                <div class="row" style="justify-content:center;margin-top:22px">
+                    <a class="btn btn-primary" href="">Outras campanhas</a>
+                    <a class="btn btn-ghost" href="minhas-doacoes">Minhas doações</a>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Doacao? _doacao;
+    private Campanha? _campanha;
+    private bool _naoEncontrada;
+    private readonly CancellationTokenSource _cts = new();
+
+    private bool BateuMeta => _campanha is not null && _campanha.ValorTotalArrecadado >= _campanha.MetaFinanceira;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+        _ = AcompanharAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        var r = await Api.DoacaoAsync(Id);
+        if (!r.Ok) { _naoEncontrada = r.Problema!.Status == 404; return; }
+        _doacao = r.Valor;
+        var c = await Api.CampanhaAsync(_doacao!.IdCampanha);
+        if (c.Ok) _campanha = c.Valor;
+    }
+
+    // Enquanto Pendente, consulta a cada 2 s até o worker processar.
+    private async Task AcompanharAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        try
+        {
+            while (_doacao is { Status: "Pendente" } && await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}

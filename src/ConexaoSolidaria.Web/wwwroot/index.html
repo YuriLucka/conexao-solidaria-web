@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Painel de transparência e doações da ONG Esperança Solidária: cada real doado, à vista de todos." />
+    <meta name="theme-color" content="#0E7C66" />
+    <title>Conexão Solidária</title>
+    <base href="/" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="preload" id="webassembly" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+    <link rel="stylesheet" href="css/prototipo.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script src="js/app.js"></script>
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Abertura enquanto o Blazor carrega (mesma do protótipo). -->
+        <div class="splash" role="status" aria-label="Abrindo a Conexão Solidária">
+            <div class="splash-in">
+                <svg class="sol sol-wave sol-float" width="170" height="149" viewBox="0 0 160 140" aria-hidden="true"><ellipse cx="80" cy="134" rx="24" ry="4" fill="currentColor" opacity=".08"/><g class="sol-motion" fill="none" stroke="#F0643C" stroke-width="3.5" stroke-linecap="round"><path d="M130.8 39.4A11 11 0 0 1 138.6 52.8"/><path d="M132.9 31.6A19 19 0 0 1 146.4 54.9"/></g><g class="sol-rays"><line x1="44.5" y1="49.5" x2="35.8" y2="44.5" stroke="#F9B935" stroke-width="6" stroke-linecap="round" opacity="1.00"/><line x1="59.5" y1="34.5" x2="54.5" y2="25.8" stroke="#F9B935" stroke-width="6" stroke-linecap="round" opacity="1.00"/><line x1="80.0" y1="29.0" x2="80.0" y2="19.0" stroke="#F9B935" stroke-width="6" stroke-linecap="round" opacity="1.00"/><line x1="100.5" y1="34.5" x2="105.5" y2="25.8" stroke="#F9B935" stroke-width="6" stroke-linecap="round" opacity="1.00"/><line x1="115.5" y1="49.5" x2="124.2" y2="44.5" stroke="#F9B935" stroke-width="6" stroke-linecap="round" opacity="1.00"/></g><path d="M50 80Q36 90 40 104" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><path class="sol-arm" d="M110 74Q126 68 128 50" fill="none" stroke="#F0643C" stroke-width="6" stroke-linecap="round"/><circle cx="80" cy="70" r="33" fill="#F9B935" stroke="#E09A1A" stroke-width="2"/><path d="M111.0 58.7A33 33 0 0 1 68.7 101.0Q96.5 84.8 111.0 58.7Z" fill="#E8862F" opacity=".22"/><g class="sol-eyes"><ellipse cx="68" cy="65" rx="3.6" ry="5" fill="#10241F"/><circle cx="69.2" cy="63.2" r="1.3" fill="#FFFFFF"/><ellipse cx="92" cy="65" rx="3.6" ry="5" fill="#10241F"/><circle cx="93.2" cy="63.2" r="1.3" fill="#FFFFFF"/></g><circle cx="60" cy="77" r="5.5" fill="#F0643C" opacity=".35"/><circle cx="100" cy="77" r="5.5" fill="#F0643C" opacity=".35"/><path d="M70 78Q80 88 90 78" fill="none" stroke="#10241F" stroke-width="3" stroke-linecap="round"/></svg>
+                <div class="splash-word"><b>conexão</b><span>solidária</span></div>
+                <p>Cada real doado, à vista de todos.</p>
+                <div class="splash-bar"><span></span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui" role="alert">
+        Algo deu errado ao carregar a página.
+        <a href="." class="reload">Recarregar</a>
+        <button class="dismiss" aria-label="Fechar">×</button>
+    </div>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+</body>
+
+</html>

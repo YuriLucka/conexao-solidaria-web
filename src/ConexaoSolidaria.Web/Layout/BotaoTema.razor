@@ -1,0 +1,13 @@
+@implements IDisposable
+@inject Tema Tema
+
+<button class="btn-icon theme-btn" @onclick="Tema.AlternarAsync" aria-pressed="@(Tema.Escuro ? "true" : "false")"
+        aria-label="@(Tema.Escuro ? "Usar tema claro" : "Usar tema escuro")" title="@(Tema.Escuro ? "Tema claro" : "Tema escuro")">
+    <Icone Nome="@(Tema.Escuro ? "sun" : "moon")" />
+</button>
+
+@code {
+    protected override void OnInitialized() => Tema.Mudou += Atualizar;
+    private void Atualizar() => InvokeAsync(StateHasChanged);
+    public void Dispose() => Tema.Mudou -= Atualizar;
+}

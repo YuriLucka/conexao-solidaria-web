@@ -1,0 +1,13 @@
+@* Página protegida sem login: guarda o destino, avisa e leva para Entrar. *@
+@inject Sessao Sessao
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+@code {
+    protected override void OnInitialized()
+    {
+        Sessao.VoltarPara = Nav.ToBaseRelativePath(Nav.Uri);
+        Avisos.Info("Entre na sua conta para continuar.");
+        Nav.NavigateTo("entrar", replace: true);
+    }
+}

@@ -1,0 +1,136 @@
+@page "/minhas-doacoes"
+@attribute [Authorize(Roles = "Doador")]
+@implements IAsyncDisposable
+@inject Api Api
+
+<PageTitle>Minhas doações · Conexão Solidária</PageTitle>
+
+<div class="wrap section">
+    <span class="eyebrow">Minha conta</span>
+    <h1 style="margin:8px 0 22px">Minhas doações</h1>
+    @if (_erro is not null)
+    {
+        <Estado Expressao="preocupado" Titulo="Não conseguimos carregar suas doações" Texto="@_erro">
+            <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+        </Estado>
+    }
+    else if (_doacoes is null)
+    {
+        <Carregando Texto="Buscando suas doações" />
+    }
+    else
+    {
+        var confirmadas = _doacoes.Where(d => d.Status == "Processada").ToList();
+        <div class="tiles" style="margin-bottom:22px">
+            <div class="tile hero"><span class="lbl">Total doado</span><span class="val tnum">@Formatos.Dinheiro(confirmadas.Sum(d => d.ValorDoacao))</span></div>
+            <div class="tile"><span class="lbl">Doações</span><span class="val">@confirmadas.Count</span></div>
+            <div class="tile"><span class="lbl">Campanhas apoiadas</span><span class="val">@confirmadas.Select(d => d.IdCampanha).Distinct().Count()</span></div>
+            <div class="tile"><span class="lbl">Em confirmação</span><span class="val">@_doacoes.Count(d => d.Status == "Pendente")</span></div>
+        </div>
+
+        @if (confirmadas.Count > 0)
+        {
+            var porCampanha = confirmadas.GroupBy(d => d.IdCampanha)
+                .Select(g => (Id: g.Key, Titulo: g.First().TituloCampanha, Valor: g.Sum(d => d.ValorDoacao)))
+                .OrderByDescending(x => x.Valor).ToList();
+            <section class="card meu-impacto">
+                <div class="mi-head">
+                    <Sol Expressao="radiante" Tamanho="84" />
+                    <div><span class="eyebrow">Seu impacto até aqui</span><h2>Você já apoiou @porCampanha.Count @(porCampanha.Count > 1 ? "campanhas" : "campanha"). Cada doação soma no cuidado de 220 crianças.</h2></div>
+                </div>
+                <ul class="mi-list">
+                    @foreach (var x in porCampanha)
+                    {
+                        var capa = _capas.GetValueOrDefault(x.Id);
+                        <li>
+                            <span class="capa-mini"><Capa Escolhida="@capa.Capa" Categoria="@capa.Categoria" /></span>
+                            <div><b>@Formatos.Dinheiro(x.Valor)</b><small><a href="campanhas/@x.Id">@x.Titulo</a></small></div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @if (_doacoes.Count > 0)
+        {
+            <h2 style="margin:26px 0 12px;font-size:20px">Histórico</h2>
+            <div class="card t-card">
+                <div class="tscroll">
+                    <table class="table rtable" style="min-width:620px">
+                        <thead><tr><th>Data</th><th>Campanha</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var d in _doacoes)
+                            {
+                                <tr>
+                                    <td class="tnum" data-label="Data">@Formatos.DataHora(d.CriadaEm)</td>
+                                    <td class="full first"><a href="campanhas/@d.IdCampanha">@d.TituloCampanha</a></td>
+                                    <td class="num end" data-label="Valor">@Formatos.Dinheiro(d.ValorDoacao)</td>
+                                    <td><SeloDoacao Status="@d.Status" /></td>
+                                    <td class="num end"><a href="doacoes/@d.Id" class="small">Detalhes</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <Estado Expressao="espiando" Titulo="Nenhuma doação por aqui ainda" Texto="Escolha uma campanha e faça a sua primeira doação." Tamanho="140">
+                    <a class="btn btn-doar" href="">Ver campanhas</a>
+                </Estado>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Doacao>? _doacoes;
+    private string? _erro;
+    private readonly Dictionary<Guid, (string? Capa, string? Categoria)> _capas = new();
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+        _ = AtualizarPendentesAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        var r = await Api.MinhasDoacoesAsync();
+        if (!r.Ok) { _erro = r.Problema!.Mensagem; return; }
+        _erro = null;
+        _doacoes = r.Valor;
+
+        // Capa de cada campanha apoiada (endpoint público de detalhe).
+        foreach (var id in _doacoes!.Select(d => d.IdCampanha).Distinct().Where(id => !_capas.ContainsKey(id)))
+        {
+            var c = await Api.CampanhaAsync(id);
+            if (c.Ok) _capas[id] = (c.Valor!.Capa, c.Valor.Categoria);
+        }
+    }
+
+    // Doações em confirmação mudam sozinhas para Confirmada.
+    private async Task AtualizarPendentesAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (_doacoes?.Any(d => d.Status == "Pendente") != true) continue;
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}

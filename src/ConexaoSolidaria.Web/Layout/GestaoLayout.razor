@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject Sessao Sessao
+@inject Tema Tema
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+<div class="g-shell">
+    <aside class="g-side">
+        <a href="gestao" class="brand" aria-label="Conexão Solidária, gestão"><Logo Tamanho="30" /></a>
+        <span class="g-org">ONG Esperança Solidária · Gestão</span>
+        <nav class="g-nav" aria-label="Gestão">
+            <NavLink href="gestao" Match="NavLinkMatch.All" ActiveClass="on" data-short="Início"><Icone Nome="home" /><span class="t">Visão geral</span></NavLink>
+            <NavLink href="gestao/campanhas" ActiveClass="on" data-short="Campanhas"><Icone Nome="flag" /><span class="t">Campanhas</span></NavLink>
+            <NavLink href="gestao/doadores" ActiveClass="on" data-short="Doadores"><Icone Nome="users" /><span class="t">Doadores</span></NavLink>
+            <NavLink href="gestao/doacoes" ActiveClass="on" data-short="Doações"><Icone Nome="heart" /><span class="t">Doações</span></NavLink>
+            <hr />
+            <a href="" data-short="Site"><Icone Nome="globe" /><span class="t">Painel público</span></a>
+            <button class="g-theme" @onclick="Tema.AlternarAsync" aria-pressed="@(Tema.Escuro ? "true" : "false")">
+                <Icone Nome="@(Tema.Escuro ? "sun" : "moon")" />@(Tema.Escuro ? "Tema claro" : "Tema escuro")
+            </button>
+        </nav>
+        <div class="g-user">
+            <Avatar Nome="@(Sessao.Nome ?? "")" />
+            <div class="grow"><b>@Sessao.Nome</b><small>Equipe da ONG</small></div>
+            <BotaoTema />
+            <button class="btn-icon" @onclick="SairAsync" aria-label="Sair" title="Sair"><Icone Nome="logout" Tamanho="17" /></button>
+        </div>
+    </aside>
+    <main class="g-main"><div class="g-inner">@Body</div></main>
+</div>
+<ListaAvisos />
+
+@code {
+    protected override void OnInitialized() => Tema.Mudou += Atualizar;
+    private void Atualizar() => InvokeAsync(StateHasChanged);
+
+    private async Task SairAsync()
+    {
+        await Sessao.SairAsync();
+        Avisos.Info("Você saiu da sua conta.");
+        Nav.NavigateTo("");
+    }
+
+    public void Dispose() => Tema.Mudou -= Atualizar;
+}

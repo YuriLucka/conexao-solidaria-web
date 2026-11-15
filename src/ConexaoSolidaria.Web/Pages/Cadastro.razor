@@ -1,0 +1,144 @@
+@page "/cadastro"
+@inject Api Api
+@inject Sessao Sessao
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+<PageTitle>Criar conta · Conexão Solidária</PageTitle>
+
+<div class="wrap">
+    <div class="cad-grid">
+        <form class="card cad-form" @onsubmit="CriarAsync" novalidate>
+            <div>
+                <span class="eyebrow">Cadastro de doador</span>
+                <h1 style="margin-top:8px">Crie sua conta</h1>
+                <p class="muted" style="margin-top:6px">Leva menos de um minuto. Depois é só escolher uma campanha.</p>
+            </div>
+            <div class="field">
+                <label for="c-nome">Nome completo</label>
+                <input type="text" id="c-nome" autocomplete="name" placeholder="Como no seu documento" @bind="_nome" aria-invalid="@Invalido("nomeCompleto")" />
+                <p class="error" id="err-c-nome">@Erro("nomeCompleto")</p>
+            </div>
+            <div class="two">
+                <div class="field">
+                    <label for="c-email">E-mail</label>
+                    <input type="email" id="c-email" autocomplete="email" placeholder="nome@exemplo.com" @bind="_email" aria-invalid="@Invalido("email")" />
+                    <p class="error" id="err-c-email">@Erro("email")</p>
+                </div>
+                <div class="field">
+                    <label for="c-cpf">CPF</label>
+                    <input type="text" id="c-cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14"
+                           value="@_cpf" @oninput="DigitouCpf" aria-invalid="@Invalido("cpf")" />
+                    <p class="error" id="err-c-cpf">@Erro("cpf")</p>
+                </div>
+            </div>
+            <div class="two">
+                <div class="field">
+                    <label for="c-senha">Senha</label>
+                    <div class="pw">
+                        <input type="@(_verSenha ? "text" : "password")" id="c-senha" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"
+                               value="@_senha" @oninput="e => _senha = e.Value?.ToString() ?? string.Empty" aria-invalid="@Invalido("senha")" />
+                        <button type="button" @onclick="() => _verSenha = !_verSenha" aria-label="@(_verSenha ? "Esconder senha" : "Mostrar senha")"><Icone Nome="@(_verSenha ? "eyeoff" : "eye")" /></button>
+                    </div>
+                    <div class="strength" id="pw-meter" data-s="@ForcaSenha" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                    <p class="hint" id="pw-hint">Use letras, números e um caractere especial (ex.: Doar@2026).</p>
+                    <p class="error" id="err-c-senha">@Erro("senha")</p>
+                </div>
+                <div class="field">
+                    <label for="c-conf">Confirme a senha</label>
+                    <input type="password" id="c-conf" autocomplete="new-password" placeholder="Repita a senha" @bind="_confirmacao" aria-invalid="@Invalido("confirmacao")" />
+                    <p class="error" id="err-c-conf">@Erro("confirmacao")</p>
+                </div>
+            </div>
+            <label class="check">
+                <input type="checkbox" id="c-termos" @bind="_termos" />
+                <span>Li e aceito os <a href="termos" target="_blank">termos de uso e a política de privacidade</a>. Meus dados são usados só para identificar minhas doações.</span>
+            </label>
+            <p class="error" id="err-c-termos">@Erro("termos")</p>
+            @if (_erroGeral is not null)
+            {
+                <div class="form-error" role="alert">@_erroGeral</div>
+            }
+            <button type="submit" class="btn btn-doar btn-lg" disabled="@_enviando">@(_enviando ? "Criando conta…" : "Criar conta")</button>
+            <p class="small muted">Já tem conta? <a href="entrar">Entrar</a></p>
+        </form>
+        <aside class="why">
+            <h2 style="font-size:18px">O que pedimos e por quê</h2>
+            <div><span class="ic-wrap"><Icone Nome="user" Tamanho="17" /></span><div><b>Nome completo</b><p>Para identificar você no recibo da doação.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="mail" Tamanho="17" /></span><div><b>E-mail</b><p>É o seu login. Cada e-mail pode ter uma conta só.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="idcard" Tamanho="17" /></span><div><b>CPF</b><p>Usamos para identificar suas doações. Ele nunca aparece no site.</p></div></div>
+            <div><span class="ic-wrap"><Icone Nome="lock" Tamanho="17" /></span><div><b>Senha</b><p>Guardada com criptografia. Nem a equipe da ONG consegue ver.</p></div></div>
+        </aside>
+    </div>
+</div>
+
+@code {
+    private string _nome = "", _email = "", _cpf = "", _senha = "", _confirmacao = "";
+    private bool _termos, _verSenha, _enviando;
+    private string? _erroGeral;
+    private Dictionary<string, string> _erros = new();
+
+    private string? Erro(string campo) => _erros.GetValueOrDefault(campo);
+    private string Invalido(string campo) => _erros.ContainsKey(campo) ? "true" : "false";
+
+    // 0 a 4 barras, como no protótipo.
+    private int ForcaSenha =>
+        (_senha.Length >= 8 ? 1 : 0) + (_senha.Any(char.IsLetter) ? 1 : 0) + (_senha.Any(char.IsDigit) ? 1 : 0) + (_senha.Any(c => !char.IsLetterOrDigit(c)) ? 1 : 0);
+
+    private void DigitouCpf(ChangeEventArgs e) => _cpf = Formatos.MascaraCpf(e.Value?.ToString() ?? "");
+
+    protected override void OnInitialized()
+    {
+        if (Sessao.Logado) Nav.NavigateTo(Sessao.EhGestor ? "gestao" : "", replace: true);
+    }
+
+    private bool Validar()
+    {
+        _erros = new();
+        if (string.IsNullOrWhiteSpace(_nome) || !_nome.Trim().Contains(' ')) _erros["nomeCompleto"] = "Informe o nome completo (nome e sobrenome).";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(_email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$")) _erros["email"] = "Informe um e-mail válido.";
+        if (!Formatos.CpfValido(_cpf)) _erros["cpf"] = "CPF inválido. Confira os números.";
+        if (ForcaSenha < 4) _erros["senha"] = "A senha precisa de 8 caracteres ou mais, com letra, número e caractere especial.";
+        if (_confirmacao != _senha) _erros["confirmacao"] = "As senhas não são iguais.";
+        if (!_termos) _erros["termos"] = "Para criar a conta, aceite os termos de uso.";
+        return _erros.Count == 0;
+    }
+
+    private async Task CriarAsync()
+    {
+        _erroGeral = null;
+        if (!Validar()) return;
+
+        _enviando = true;
+        var r = await Api.CadastrarAsync(new CadastrarDoadorRequest(_nome.Trim(), _email.Trim(), _cpf, _senha));
+        if (!r.Ok)
+        {
+            _enviando = false;
+            var p = r.Problema!;
+            // 409 e 400 da API caem no campo certo.
+            if (p.Mensagem.Contains("e-mail", StringComparison.OrdinalIgnoreCase)) _erros["email"] = p.Mensagem;
+            else if (p.Mensagem.Contains("CPF", StringComparison.OrdinalIgnoreCase)) _erros["cpf"] = p.Mensagem;
+            else if (p.Mensagem.Contains("Senha", StringComparison.OrdinalIgnoreCase)) _erros["senha"] = p.Mensagem;
+            else if (p.Mensagem.Contains("Nome", StringComparison.OrdinalIgnoreCase)) _erros["nomeCompleto"] = p.Mensagem;
+            else _erroGeral = p.Mensagem;
+            return;
+        }
+
+        // Conta criada: entra direto.
+        var login = await Api.LoginAsync(new LoginRequest(_email.Trim(), _senha));
+        _enviando = false;
+        if (login.Ok)
+        {
+            await Sessao.EntrarAsync(login.Valor!);
+            Avisos.Ok($"Conta criada! Boas-vindas, {Formatos.PrimeiroNome(_nome)}.");
+            var destino = Sessao.VoltarPara;
+            Sessao.VoltarPara = null;
+            Nav.NavigateTo(destino is not null && !destino.StartsWith("gestao") ? destino : "");
+        }
+        else
+        {
+            Avisos.Ok("Conta criada! Entre com seu e-mail e senha.");
+            Nav.NavigateTo("entrar");
+        }
+    }
+}

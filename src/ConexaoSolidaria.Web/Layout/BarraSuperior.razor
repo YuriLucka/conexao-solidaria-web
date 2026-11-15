@@ -1,0 +1,65 @@
+@implements IDisposable
+@inject Sessao Sessao
+@inject Tema Tema
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+<header class="topbar">
+    <div class="wrap topbar-in">
+        <a href="" class="brand" aria-label="Conexão Solidária, página inicial"><Logo Tamanho="34" /></a>
+        <nav class="topnav @(_menuAberto ? "open" : "")" aria-label="Principal">
+            @foreach (var (rota, rotulo) in Itens)
+            {
+                <NavLink href="@rota" Match="@(rota == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)" ActiveClass="on" @onclick="FecharMenu">@rotulo</NavLink>
+            }
+            @if (Sessao.Logado)
+            {
+                <span class="who"><Avatar Nome="@(Sessao.Nome ?? "")" /><span>@Formatos.PrimeiroNome(Sessao.Nome ?? "")</span></span>
+                <button class="btn btn-ghost btn-sm" @onclick="SairAsync"><Icone Nome="logout" Tamanho="16" />Sair</button>
+            }
+            else
+            {
+                <a href="entrar" class="btn btn-ghost" @onclick="FecharMenu">Entrar</a>
+                <a href="cadastro" class="btn btn-doar" @onclick="FecharMenu">Quero doar</a>
+            }
+        </nav>
+        <BotaoTema />
+        <button class="btn-icon menu-btn" @onclick="() => _menuAberto = !_menuAberto" aria-label="@(_menuAberto ? "Fechar menu" : "Abrir menu")" aria-expanded="@(_menuAberto ? "true" : "false")">
+            <Icone Nome="@(_menuAberto ? "x" : "menu")" />
+        </button>
+    </div>
+</header>
+
+@code {
+    private bool _menuAberto;
+
+    private IEnumerable<(string, string)> Itens => Sessao switch
+    {
+        { EhDoador: true } => [("", "Campanhas"), ("minhas-doacoes", "Minhas doações"), ("como-funciona", "Como funciona")],
+        { EhGestor: true } => [("", "Painel público"), ("gestao", "Área da gestão")],
+        _ => [("", "Campanhas"), ("como-funciona", "Como funciona")]
+    };
+
+    protected override void OnInitialized()
+    {
+        Sessao.AuthenticationStateChanged += Mudou;
+        Nav.LocationChanged += Navegou;
+    }
+
+    private void Mudou(Task<AuthenticationState> _) => InvokeAsync(StateHasChanged);
+    private void Navegou(object? s, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) { _menuAberto = false; InvokeAsync(StateHasChanged); }
+    private void FecharMenu() => _menuAberto = false;
+
+    private async Task SairAsync()
+    {
+        await Sessao.SairAsync();
+        Avisos.Info("Você saiu da sua conta.");
+        Nav.NavigateTo("");
+    }
+
+    public void Dispose()
+    {
+        Sessao.AuthenticationStateChanged -= Mudou;
+        Nav.LocationChanged -= Navegou;
+    }
+}

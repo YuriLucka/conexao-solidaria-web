@@ -1,0 +1,50 @@
+@* Card de campanha do painel (e prévia no formulário da gestão, sem links). *@
+<article class="camp-card">
+    <a href="@Link" class="camp-cover" tabindex="-1" aria-hidden="true">
+        <Capa Escolhida="@CapaId" Categoria="@Categoria" />
+        @if (!string.IsNullOrEmpty(Categoria))
+        {
+            <span class="cat-tag">@Categoria</span>
+        }
+    </a>
+    <div class="camp-body">
+        <h3><a href="@Link">@(string.IsNullOrWhiteSpace(Titulo) ? "Título da campanha" : Titulo)</a></h3>
+        <p class="camp-desc">@(string.IsNullOrWhiteSpace(Descricao) ? "A descrição aparece aqui." : Descricao)</p>
+        <Medidor Progresso="@Progresso" Rotulo="@($"{Formatos.Porcentagem(Progresso)} da meta")" />
+        <div class="camp-nums">
+            <div><strong class="tnum">@Formatos.DinheiroInteiro(Arrecadado)</strong><span>de @Formatos.DinheiroInteiro(Meta)</span></div>
+            <div class="pct">@Formatos.Porcentagem(Progresso)</div>
+        </div>
+        <div class="camp-foot">
+            <span class="muted small"><Icone Nome="clock" Tamanho="14" /> @Formatos.Prazo(Status, DataFim, PrazoEncerrado)</span>
+            @if (Status == "Ativa" && !PrazoEncerrado)
+            {
+                <a class="btn btn-doar btn-sm" href="@Link">Doar</a>
+            }
+            else if (Status == "Ativa")
+            {
+                <span class="pill pill-warn">Prazo encerrado</span>
+            }
+            else
+            {
+                <SeloStatus Status="@Status" />
+            }
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public string Descricao { get; set; } = "";
+    [Parameter] public decimal Meta { get; set; }
+    [Parameter] public decimal Arrecadado { get; set; }
+    [Parameter] public DateTime DataFim { get; set; }
+    [Parameter] public bool PrazoEncerrado { get; set; }
+    [Parameter] public string Status { get; set; } = "Ativa";
+    [Parameter] public string? Categoria { get; set; }
+    [Parameter] public string? CapaId { get; set; }
+
+    private string? Link => Id is null ? null : $"campanhas/{Id}";
+    private double Progresso => Formatos.Progresso(Arrecadado, Meta);
+}

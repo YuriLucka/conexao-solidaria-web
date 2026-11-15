@@ -1,0 +1,11 @@
+@* Ilustração da campanha: a capa escolhida, a da categoria, ou "sol-colinas". *@
+@((MarkupString)(Arte.CapaSvg.GetValueOrDefault(Id) ?? Arte.CapaSvg["sol-colinas"]))
+
+@code {
+    [Parameter] public string? Escolhida { get; set; }
+    [Parameter] public string? Categoria { get; set; }
+
+    private string Id => !string.IsNullOrEmpty(Escolhida) && Arte.CapaSvg.ContainsKey(Escolhida) ? Escolhida
+        : Categoria is not null && Arte.CapaPorCategoria.TryGetValue(Categoria, out var c) ? c
+        : "sol-colinas";
+}

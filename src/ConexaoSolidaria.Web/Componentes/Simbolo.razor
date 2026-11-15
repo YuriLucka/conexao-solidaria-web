@@ -1,0 +1,5 @@
+@((MarkupString)Arte.Simbolo.Replace("<svg ", $"<svg width=\"{Tamanho}\" height=\"{Tamanho}\" "))
+
+@code {
+    [Parameter] public int Tamanho { get; set; } = 36;
+}

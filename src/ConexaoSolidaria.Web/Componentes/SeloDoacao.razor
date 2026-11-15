@@ -1,0 +1,17 @@
+@* Selo do andamento da doação: Pendente (na fila do RabbitMQ, aguardando o worker), Processada ou Rejeitada. *@
+@switch (Status)
+{
+    case "Processada":
+        <span class="pill pill-ok"><Icone Nome="check" Tamanho="13" />Confirmada</span>
+        break;
+    case "Rejeitada":
+        <span class="pill pill-bad"><Icone Nome="x" Tamanho="13" />Não concluída</span>
+        break;
+    default:
+        <span class="pill pill-warn pulse"><span class="dot"></span>Em confirmação</span>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public string Status { get; set; } = "Pendente";
+}

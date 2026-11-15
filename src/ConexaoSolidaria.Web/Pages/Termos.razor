@@ -1,0 +1,25 @@
+@page "/termos"
+
+<PageTitle>Termos de uso e privacidade · Conexão Solidária</PageTitle>
+
+<div class="wrap section" style="max-width:800px">
+    <span class="eyebrow">Institucional</span>
+    <h1 style="margin:8px 0 22px">Termos de uso e privacidade</h1>
+    <div class="card legal">
+        @foreach (var (titulo, texto) in Secoes)
+        {
+            <div><h2>@titulo</h2><p>@texto</p></div>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly (string, string)[] Secoes =
+    [
+        ("Sobre a plataforma", "A Conexão Solidária é mantida pela ONG Esperança Solidária para receber doações e mostrar, com transparência, quanto cada campanha arrecadou."),
+        ("Doações", "Cada doação vai para a campanha escolhida. Se a campanha terminar antes da confirmação, a doação não é concluída e nenhum valor é somado."),
+        ("Dados que coletamos", "Nome completo, e-mail, CPF e senha. Usamos esses dados só para identificar você e as suas doações."),
+        ("Como protegemos seus dados", "A senha é guardada com criptografia. CPF e e-mail nunca aparecem no site. Nas campanhas, mostramos apenas o primeiro nome e a inicial do sobrenome de quem doou."),
+        ("Seus direitos", "Pela Lei Geral de Proteção de Dados (LGPD), você pode pedir acesso, correção ou exclusão dos seus dados a qualquer momento pelo e-mail contato@esperancasolidaria.demo.")
+    ];
+}

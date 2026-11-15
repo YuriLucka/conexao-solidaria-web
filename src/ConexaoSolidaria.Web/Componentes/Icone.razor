@@ -1,0 +1,9 @@
+@* Ícone de traço 24x24 do protótipo. *@
+<svg class="ic @Classe" width="@Tamanho" height="@Tamanho" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">@((MarkupString)(Arte.Icones.GetValueOrDefault(Nome) ?? ""))</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Nome { get; set; } = "";
+    [Parameter] public int Tamanho { get; set; } = 18;
+    [Parameter] public string? Classe { get; set; }
+}

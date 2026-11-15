@@ -1,0 +1,11 @@
+@* Barra de progresso da meta. *@
+<div class="meter @Classe @(Progresso >= 1 ? "full" : "")" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+     aria-valuenow="@((int)Math.Round(Math.Min(Progresso, 1) * 100))" aria-label="@Rotulo">
+    <span style="width:@(Math.Min(100, Progresso * 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+</div>
+
+@code {
+    [Parameter] public double Progresso { get; set; }
+    [Parameter] public string? Classe { get; set; }
+    [Parameter] public string Rotulo { get; set; } = "Progresso da meta";
+}

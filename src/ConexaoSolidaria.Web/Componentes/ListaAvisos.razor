@@ -1,0 +1,18 @@
+@implements IDisposable
+@inject Avisos Avisos
+
+<div class="toasts" id="toasts" aria-live="polite">
+    @foreach (var a in Avisos.Lista)
+    {
+        <div class="toast @a.Tipo" @key="a.Id">
+            <Icone Nome="@(a.Tipo == "bad" ? "alert" : a.Tipo == "ok" ? "check" : "info")" />
+            <span>@a.Texto</span>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Avisos.Mudou += Atualizar;
+    private void Atualizar() => InvokeAsync(StateHasChanged);
+    public void Dispose() => Avisos.Mudou -= Atualizar;
+}

@@ -1,0 +1,121 @@
+@page "/"
+@implements IAsyncDisposable
+@inject Api Api
+@inject Sessao Sessao
+
+<PageTitle>Conexão Solidária · Painel de transparência</PageTitle>
+
+<section class="hero">
+    <div class="wrap hero-in">
+        <div class="hero-text">
+            <span class="eyebrow">Painel de transparência</span>
+            <h1>Cada real doado,<br /> <em>à vista de <span class="nw">todos.<span class="h1-sol"><Sol Expressao="acenando" Tamanho="80" Acenando="true" SemSombra="true" /></span></span></em></h1>
+            <p>Acompanhe quanto cada campanha da ONG Esperança Solidária já arrecadou. O valor muda assim que uma doação é processada.</p>
+            <div class="hero-cta">
+                <a class="btn btn-doar btn-lg" href="@LinkQueroDoar"><Icone Nome="heart" />Quero doar</a>
+                <a class="btn btn-ghost btn-lg" href="como-funciona">Como funciona</a>
+            </div>
+        </div>
+        <div class="card hero-fig">
+            <div class="lbl-top"><span class="muted small">Arrecadado nas campanhas ativas</span></div>
+            <div class="big tnum" data-teste="total-arrecadado">@Formatos.DinheiroInteiro(Total)</div>
+            <div class="sub">de @Formatos.DinheiroInteiro(SomaMetas) somando as metas · @Formatos.Porcentagem(Formatos.Progresso(Total, SomaMetas))</div>
+            <div style="margin-top:8px">
+                <span class="live"><i></i><span>@(_atualizadoEm is null ? "Carregando…" : $"Atualizado {Formatos.Ha(_atualizadoEm.Value)}")</span></span>
+            </div>
+            <div style="margin-top:14px"><Medidor Progresso="@Formatos.Progresso(Total, SomaMetas)" Classe="lg" /></div>
+            <div class="hero-stats">
+                <div><strong>@(_ativas?.Count ?? 0)</strong><span>campanhas ativas</span></div>
+                <div><strong class="tnum">@Formatos.Numero(_ativas?.Sum(c => c.CriancasAtendidas ?? 0) ?? 0)</strong><span>crianças atendidas</span></div>
+                <div><strong class="tnum">@Formatos.Numero(_ativas?.Count(c => !c.PrazoEncerrado) ?? 0)</strong><span>recebendo doações</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wrap section">
+    <div class="section-head">
+        <h2>Campanhas ativas</h2>
+        <span class="muted small">@(_ativas?.Count ?? 0) campanhas · ordenadas pelo prazo</span>
+    </div>
+    @if (_erro is not null)
+    {
+        <Estado Expressao="preocupado" Titulo="Não conseguimos carregar as campanhas" Texto="@_erro">
+            <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+        </Estado>
+    }
+    else if (_ativas is null)
+    {
+        <Carregando Texto="Buscando as campanhas" />
+    }
+    else if (_ativas.Count == 0)
+    {
+        <Estado Expressao="espiando" Titulo="Nenhuma campanha ativa no momento" Texto="Volte em breve: novas campanhas aparecem aqui assim que a ONG publica." Tamanho="120" />
+    }
+    else
+    {
+        <div class="grid-cards">
+            @foreach (var c in _ativas)
+            {
+                <CardCampanha @key="c.Id" Id="c.Id" Titulo="@c.Titulo" Descricao="@c.Descricao" Meta="c.MetaFinanceira"
+                              Arrecadado="c.ValorTotalArrecadado" DataFim="c.DataFim" PrazoEncerrado="c.PrazoEncerrado"
+                              Categoria="@c.Categoria" CapaId="@c.Capa" />
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private List<CampanhaAtiva>? _ativas;
+    private string? _erro;
+    private DateTime? _atualizadoEm;
+    private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _cts = new();
+
+    private decimal Total => _ativas?.Sum(c => c.ValorTotalArrecadado) ?? 0;
+    private decimal SomaMetas => _ativas?.Sum(c => c.MetaFinanceira) ?? 0;
+
+    private string LinkQueroDoar => Sessao.EhDoador && _ativas?.FirstOrDefault(c => !c.PrazoEncerrado) is { } primeira ? $"campanhas/{primeira.Id}"
+        : Sessao.EhGestor ? "gestao" : "cadastro";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+        _ = AtualizarSozinhoAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        var r = await Api.CampanhasAtivasAsync();
+        if (r.Ok)
+        {
+            _ativas = r.Valor!;
+            _erro = null;
+            _atualizadoEm = DateTime.UtcNow;
+        }
+        else if (_ativas is null)
+            _erro = r.Problema!.Mensagem;
+    }
+
+    // Tempo real do painel: busca de novo a cada 5 s (o valor sobe quando o worker processa uma doação).
+    private async Task AtualizarSozinhoAsync()
+    {
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(_cts.Token))
+            {
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        _timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

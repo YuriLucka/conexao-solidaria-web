@@ -1,0 +1,91 @@
+@page "/entrar"
+@layout EntrarLayout
+@inject Api Api
+@inject Sessao Sessao
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+<PageTitle>Entrar · Conexão Solidária</PageTitle>
+
+<div class="auth">
+    <div class="auth-art">
+        <div>
+            <span class="eyebrow" style="color:inherit;opacity:.8">Conexão Solidária</span>
+            <h2 style="margin-top:12px">Quem doa acompanha. Quem cuida presta contas.</h2>
+            <p>A plataforma da ONG Esperança Solidária liga quem quer ajudar às crianças que a ONG acolhe, com cada real visível para todos.</p>
+        </div>
+        <ul>
+            <li><Icone Nome="heart" /><span>Doe em poucos cliques para a campanha que você escolher.</span></li>
+            <li><Icone Nome="eye" /><span>Veja quanto cada campanha já arrecadou, atualizado em tempo real.</span></li>
+            <li><Icone Nome="shield" /><span>Seus dados ficam protegidos e nunca aparecem no site.</span></li>
+        </ul>
+        <div class="art-symbol"><Simbolo Tamanho="340" /></div>
+    </div>
+    <div class="auth-form-wrap">
+        <form class="auth-form" @onsubmit="EntrarAsync" novalidate>
+            <div class="auth-hello">
+                <Sol Expressao="piscando" Tamanho="80" />
+                <div><h1>Entrar</h1><p class="muted" style="margin-top:4px">Que bom te ver por aqui.</p></div>
+            </div>
+            <div class="field">
+                <label for="login-email">E-mail</label>
+                <input type="email" id="login-email" autocomplete="username" placeholder="nome@exemplo.com" @bind="_email" />
+            </div>
+            <div class="field">
+                <label for="login-senha">Senha</label>
+                <div class="pw">
+                    <input type="@(_verSenha ? "text" : "password")" id="login-senha" autocomplete="current-password" placeholder="Sua senha" @bind="_senha" />
+                    <button type="button" @onclick="() => _verSenha = !_verSenha" aria-label="@(_verSenha ? "Esconder senha" : "Mostrar senha")"><Icone Nome="@(_verSenha ? "eyeoff" : "eye")" /></button>
+                </div>
+            </div>
+            @if (_erro is not null)
+            {
+                <div class="form-error" id="login-erro" role="alert">@_erro</div>
+            }
+            <button type="submit" class="btn btn-primary btn-lg btn-block" disabled="@_enviando">@(_enviando ? "Entrando…" : "Entrar")</button>
+            <div class="row between small"><a href="cadastro">Criar conta de doador</a></div>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string _email = "";
+    private string _senha = "";
+    private bool _verSenha;
+    private bool _enviando;
+    private string? _erro;
+
+    protected override void OnInitialized()
+    {
+        // Já logado: vai direto para a área do perfil.
+        if (Sessao.Logado) Nav.NavigateTo(Sessao.EhGestor ? "gestao" : "", replace: true);
+    }
+
+    private async Task EntrarAsync()
+    {
+        _erro = null;
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_senha))
+        {
+            _erro = "Informe e-mail e senha.";
+            return;
+        }
+
+        _enviando = true;
+        var r = await Api.LoginAsync(new LoginRequest(_email.Trim(), _senha));
+        _enviando = false;
+
+        if (!r.Ok)
+        {
+            _erro = r.Problema!.Mensagem;
+            return;
+        }
+
+        await Sessao.EntrarAsync(r.Valor!);
+        Avisos.Ok($"Olá, {Formatos.PrimeiroNome(r.Valor!.Nome)}! Que bom ter você aqui.");
+        var destino = Sessao.VoltarPara;
+        Sessao.VoltarPara = null;
+        // Gestora não volta para telas de doador, e vice-versa (a API recusaria de qualquer jeito).
+        var podeVoltar = destino is not null && (Sessao.EhGestor ? destino.StartsWith("gestao") : !destino.StartsWith("gestao"));
+        Nav.NavigateTo(podeVoltar ? destino! : Sessao.EhGestor ? "gestao" : "");
+    }
+}

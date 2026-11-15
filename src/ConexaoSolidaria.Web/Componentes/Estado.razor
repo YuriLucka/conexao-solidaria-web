@@ -1,0 +1,30 @@
+@* Tela de estado com o Solzinho: carregando, vazio, erro, 404, acesso restrito. *@
+<div class="state @Classe" role="@(Girando ? "status" : null)" aria-live="@(Girando ? "polite" : null)">
+    <Sol Expressao="@Expressao" Tamanho="@Tamanho" Girando="@Girando" />
+    @if (Girando)
+    {
+        <h2>@Titulo</h2>
+    }
+    else
+    {
+        <h1>@Titulo</h1>
+    }
+    @if (!string.IsNullOrEmpty(Texto))
+    {
+        <p class="muted">@Texto</p>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="row" style="justify-content:center">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Expressao { get; set; } = "feliz";
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public string? Texto { get; set; }
+    [Parameter] public bool Girando { get; set; }
+    [Parameter] public int Tamanho { get; set; } = 150;
+    [Parameter] public string? Classe { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

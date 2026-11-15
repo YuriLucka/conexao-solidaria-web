@@ -1,0 +1,30 @@
+@* Solzinho, o mascote. Mesmo desenho do protótipo; o tamanho e as animações vêm dos parâmetros. *@
+@((MarkupString)Svg)
+
+@code {
+    [Parameter] public string Expressao { get; set; } = "feliz";
+    [Parameter] public int Tamanho { get; set; } = 120;
+    [Parameter] public bool Acenando { get; set; }
+    [Parameter] public bool Flutuando { get; set; }
+    [Parameter] public bool Girando { get; set; }
+    [Parameter] public bool SemSombra { get; set; }
+    // Cores dos braços (no protótipo ficam brancos sobre fundo verde).
+    [Parameter] public string? BracoA { get; set; }
+    [Parameter] public string? BracoB { get; set; }
+
+    private static readonly System.Text.RegularExpressions.Regex Sombra = new("<ellipse cx=\"80\" cy=\"134\"[^>]*/>");
+
+    private string Svg
+    {
+        get
+        {
+            var svg = Arte.Sol.GetValueOrDefault(Expressao) ?? Arte.Sol["feliz"];
+            var classes = string.Join(' ', new[] { "sol", Girando ? "sol-spin" : "", Acenando ? "sol-wave" : "", Flutuando ? "sol-float" : "" }.Where(c => c != ""));
+            svg = svg.Replace("<svg class=\"sol\"", $"<svg class=\"{classes}\" width=\"{Tamanho}\" height=\"{Tamanho * 140 / 160}\"");
+            if (SemSombra) svg = Sombra.Replace(svg, "", 1);
+            if (BracoA is not null) svg = svg.Replace("stroke=\"var(--logo-a)\"", $"stroke=\"{BracoA}\"");
+            if (BracoB is not null) svg = svg.Replace("stroke=\"var(--logo-b)\"", $"stroke=\"{BracoB}\"");
+            return svg;
+        }
+    }
+}

@@ -1,0 +1,117 @@
+@* Cartão de doação da página da campanha. "Doar" envia a intenção (POST /api/doacoes) e abre o acompanhamento. *@
+@inject Api Api
+@inject Sessao Sessao
+@inject NavigationManager Nav
+@inject Avisos Avisos
+
+@if (Campanha.Status == "Concluida" && Formatos.Progresso(Campanha.ValorTotalArrecadado, Campanha.MetaFinanceira) >= 1)
+{
+    <div class="meta-batida">
+        <Sol Expressao="comemorando" Tamanho="96" />
+        <div><b>Meta batida!</b><p>Esta campanha terminou com @Formatos.Porcentagem(Formatos.Progresso(Campanha.ValorTotalArrecadado, Campanha.MetaFinanceira)) da meta. Obrigado a todas as pessoas que doaram.</p></div>
+    </div>
+    <a class="btn btn-ghost btn-block" style="margin-top:10px" href="">Ver campanhas ativas</a>
+}
+else if (Campanha.Status != "Ativa")
+{
+    <div class="notice @(Campanha.Status == "Cancelada" ? "bad" : "")" style="margin-top:16px">
+        <Icone Nome="info" />
+        <div>Esta campanha foi @(Campanha.Status == "Concluida" ? "concluída" : "cancelada") e não recebe novas doações.</div>
+    </div>
+    <a class="btn btn-ghost btn-block" style="margin-top:10px" href="">Ver campanhas ativas</a>
+}
+else if (!Aceita)
+{
+    <div class="notice" style="margin-top:16px">
+        <Icone Nome="clock" />
+        <div>O prazo desta campanha terminou em @Formatos.Data(Campanha.DataFim). Ela segue no painel para transparência, mas não recebe novas doações.</div>
+    </div>
+    <a class="btn btn-ghost btn-block" style="margin-top:10px" href="">Ver campanhas ativas</a>
+}
+else if (!Sessao.Logado)
+{
+    <div class="stack" style="margin-top:18px">
+        <a class="btn btn-doar btn-lg btn-block" href="entrar" @onclick="GuardarRetorno"><Icone Nome="heart" />Entrar para doar</a>
+        <p class="small muted" style="text-align:center">Ainda não tem conta? <a href="cadastro" @onclick="GuardarRetorno">Cadastre-se em 1 minuto</a></p>
+    </div>
+}
+else if (Sessao.EhGestor)
+{
+    <div class="notice" style="margin-top:16px">
+        <Icone Nome="shield" />
+        <div>Você está com o perfil de gestão. Doações são feitas com uma conta de doador. <a href="gestao/campanhas/@Campanha.Id/editar">Gerenciar esta campanha</a></div>
+    </div>
+}
+else
+{
+    <form @onsubmit="DoarAsync" novalidate>
+        <fieldset class="amounts">
+            <legend>Escolha um valor</legend>
+            @foreach (var v in Rapidos)
+            {
+                <button type="button" class="amt @(_valor == v ? "on" : "")" @onclick="() => Escolher(v)" aria-pressed="@(_valor == v ? "true" : "false")">R$ @v</button>
+            }
+        </fieldset>
+        <div class="field">
+            <label for="valor-doacao">Ou digite outro valor</label>
+            <div class="money-input">
+                <span>R$</span>
+                <input type="text" id="valor-doacao" inputmode="decimal" autocomplete="off" placeholder="0,00"
+                       value="@_texto" @oninput="Digitou" aria-invalid="@(_erro is null ? "false" : "true")" aria-describedby="err-valor" />
+            </div>
+            <p class="error" id="err-valor" aria-live="polite">@_erro</p>
+        </div>
+        <button type="submit" class="btn btn-doar btn-lg btn-block" style="margin-top:14px" id="btn-doar" disabled="@_enviando">
+            <Icone Nome="heart" /><span>@(_enviando ? "Enviando…" : _valor is > 0 ? $"Doar {Formatos.Dinheiro(_valor.Value)}" : "Doar")</span>
+        </button>
+        <p class="hint" style="margin-top:12px;display:flex;gap:8px">
+            <Icone Nome="shield" Tamanho="16" />
+            <span>Sua doação entra numa fila de confirmação e, em poucos segundos, o valor aparece no total da campanha, à vista de todos.</span>
+        </p>
+    </form>
+}
+
+@code {
+    [Parameter, EditorRequired] public Campanha Campanha { get; set; } = null!;
+    [Parameter] public bool Aceita { get; set; }
+
+    private static readonly int[] Rapidos = [25, 50, 100, 250];
+    private decimal? _valor = 50;
+    private string _texto = "50";
+    private string? _erro;
+    private bool _enviando;
+
+    private void Escolher(int v)
+    {
+        _valor = v;
+        _texto = v.ToString();
+        _erro = null;
+    }
+
+    private void Digitou(ChangeEventArgs e)
+    {
+        _texto = e.Value?.ToString() ?? "";
+        _valor = Formatos.LerDinheiro(_texto);
+        _erro = null;
+    }
+
+    private void GuardarRetorno() => Sessao.VoltarPara = $"campanhas/{Campanha.Id}";
+
+    private async Task DoarAsync()
+    {
+        if (_valor is not > 0) { _erro = "Informe um valor maior que zero."; return; }
+        if (decimal.Round(_valor.Value, 2) != _valor.Value) { _erro = "Use no máximo 2 casas decimais (centavos)."; return; }
+
+        _enviando = true;
+        var r = await Api.DoarAsync(new CriarDoacaoRequest(Campanha.Id, _valor.Value));
+        _enviando = false;
+
+        if (r.Ok)
+        {
+            Nav.NavigateTo($"doacoes/{r.Valor!.Id}");
+            return;
+        }
+        _erro = r.Problema!.Campo("valorDoacao") ?? r.Problema.Mensagem;
+        if (r.Problema.Status == 422) Avisos.Erro(r.Problema.Mensagem);
+    }
+}

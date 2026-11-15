@@ -1,0 +1,5 @@
+<span class="avatar av@(Formatos.CorAvatar(Nome))" aria-hidden="true">@Formatos.Iniciais(Nome)</span>
+
+@code {
+    [Parameter, EditorRequired] public string Nome { get; set; } = "";
+}

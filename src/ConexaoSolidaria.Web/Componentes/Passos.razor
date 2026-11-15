@@ -1,0 +1,39 @@
+@* Linha do tempo da doação: registrada (API) -> confirmação (fila + worker) -> valor somado à campanha. *@
+<div class="card" style="margin-bottom:18px">
+    <ol class="steps">
+        <li class="step done">
+            <span class="n"><Icone Nome="check" /></span>
+            <div><b>Doação registrada</b><p>Recebemos sua doação de @Formatos.Dinheiro(Doacao.ValorDoacao) para “@Doacao.TituloCampanha”.</p></div>
+            <time>@Hora(Doacao.CriadaEm)</time>
+        </li>
+        <li class="step @(Ok ? "done" : Falhou ? "fail" : "active")">
+            <span class="n">
+                @if (Ok) { <Icone Nome="check" /> }
+                else if (Falhou) { <Icone Nome="x" /> }
+                else { <Icone Nome="refresh" Tamanho="16" Classe="spin" /> }
+            </span>
+            <div>
+                <b>@(Falhou ? "Doação não concluída" : "Confirmação")</b>
+                <p>@(Falhou ? (Doacao.MotivoRejeicao ?? "A campanha deixou de aceitar doações antes da confirmação. Nenhum valor foi somado.") : Ok ? "Sua doação foi confirmada." : "Estamos confirmando sua doação. Isso leva poucos segundos.")</p>
+            </div>
+            <time>@(Doacao.ProcessadaEm is DateTime p ? Hora(p) : "")</time>
+        </li>
+        <li class="step @(Ok ? "done" : "")">
+            <span class="n">@if (Ok) { <Icone Nome="check" /> } else { <text>3</text> }</span>
+            <div>
+                <b>Valor somado à campanha</b>
+                <p>@(Ok && Campanha is not null ? $"“{Campanha.Titulo}” agora soma {Formatos.Dinheiro(Campanha.ValorTotalArrecadado)}." : "O total da campanha é atualizado logo depois da confirmação.")</p>
+            </div>
+            <time>@(Ok && Doacao.ProcessadaEm is DateTime q ? Hora(q) : "")</time>
+        </li>
+    </ol>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Doacao Doacao { get; set; } = null!;
+    [Parameter] public Campanha? Campanha { get; set; }
+
+    private bool Ok => Doacao.Status == "Processada";
+    private bool Falhou => Doacao.Status == "Rejeitada";
+    private static string Hora(DateTime utc) => Formatos.ParaBrasilia(utc).ToString("HH:mm:ss");
+}

@@ -1,0 +1,32 @@
+/* Ajustes do site Blazor sobre o sistema visual do protótipo (prototipo.css). */
+
+/* Aviso de erro não tratado do Blazor, no estilo dos avisos do site. */
+#blazor-error-ui {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(440px, calc(100vw - 32px));
+  background: var(--bad);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 40px 12px 14px;
+  box-shadow: var(--shadow);
+  font: 14px var(--f-body);
+}
+#blazor-error-ui .reload { color: #fff; font-weight: 700; margin-left: 6px; }
+#blazor-error-ui .dismiss { position: absolute; right: 10px; top: 8px; background: none; border: 0; color: #fff; font-size: 20px; cursor: pointer; }
+
+/* NavLink do Blazor renderiza <a> comum: mantém o mesmo visual das classes do protótipo. */
+.topnav > a.active:not(.btn) { color: var(--ink); background: var(--surface-2); }
+
+/* Foco visível em todos os controles (acessibilidade). */
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--verde) 55%, transparent); outline-offset: 2px; }
+
+/* MudBlazor herda as fontes da marca. */
+.mud-typography, .mud-input, .mud-button-root { font-family: var(--f-body); }
+
+/* O Blazor foca o título ao navegar (leitores de tela); sem moldura visual nesse caso. */
+h1:focus, h1:focus-visible { outline: none; }

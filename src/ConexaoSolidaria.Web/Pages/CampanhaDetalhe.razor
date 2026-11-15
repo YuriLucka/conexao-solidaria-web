@@ -1,0 +1,173 @@
+@page "/campanhas/{Id:guid}"
+@implements IAsyncDisposable
+@inject Api Api
+@inject Sessao Sessao
+@inject NavigationManager Nav
+@inject Avisos Avisos
+@inject IJSRuntime Js
+
+<PageTitle>@(_campanha?.Titulo ?? "Campanha") · Conexão Solidária</PageTitle>
+
+@if (_naoEncontrada)
+{
+    <div class="wrap">
+        <Estado Expressao="curioso" Titulo="Não encontramos essa campanha" Texto="O endereço pode estar errado ou a campanha foi removida.">
+            <a class="btn btn-primary" href="">Ver campanhas</a>
+        </Estado>
+    </div>
+}
+else if (_erro is not null)
+{
+    <div class="wrap">
+        <Estado Expressao="preocupado" Titulo="Algo deu errado" Texto="@_erro">
+            <button class="btn btn-primary" @onclick="CarregarAsync">Tentar de novo</button>
+        </Estado>
+    </div>
+}
+else if (_campanha is null)
+{
+    <div class="wrap"><Carregando Texto="Buscando a campanha" /></div>
+}
+else
+{
+    var c = _campanha;
+    var progresso = Formatos.Progresso(c.ValorTotalArrecadado, c.MetaFinanceira);
+    var aceita = c.Status == "Ativa" && !c.PrazoEncerrado;
+    <div class="wrap section">
+        <a href="" class="back"><Icone Nome="left" Tamanho="16" />Campanhas</a>
+        <div class="camp-layout">
+            <div class="camp-main">
+                <div class="camp-hero-cover"><Capa Escolhida="@c.Capa" Categoria="@c.Categoria" /></div>
+                <div class="row">
+                    <SeloStatus Status="@c.Status" />
+                    <span class="muted small">@string.Join(" · ", new[] { c.Categoria, c.CriancasAtendidas is int n ? $"{n} crianças" : null }.Where(x => x is not null))</span>
+                </div>
+                <h1>@c.Titulo</h1>
+                @foreach (var paragrafo in c.Descricao.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <p class="lead">@paragrafo</p>
+                }
+                <dl class="facts">
+                    <div><dt>Início</dt><dd>@Formatos.Data(c.DataInicio)</dd></div>
+                    <div><dt>Término</dt><dd>@Formatos.Data(c.DataFim)</dd></div>
+                    <div><dt>Meta</dt><dd class="tnum">@Formatos.DinheiroInteiro(c.MetaFinanceira)</dd></div>
+                    <div><dt>Doações</dt><dd class="tnum">@Formatos.Numero(_doacoes?.QuantidadeDoacoes ?? 0)</dd></div>
+                </dl>
+                <h2 style="margin:0 0 6px">Doações recentes</h2>
+                <p class="muted small" style="margin-bottom:8px">Só mostramos o primeiro nome e a inicial do sobrenome de quem doou.</p>
+                <ul class="feed">
+                    @if (_doacoes is { Recentes.Count: > 0 })
+                    {
+                        foreach (var d in _doacoes.Recentes)
+                        {
+                            <li><Avatar Nome="@d.Doador" /><div class="grow"><b>@d.Doador</b> <span class="muted">doou</span></div><b class="tnum">@Formatos.Dinheiro(d.Valor)</b><time class="muted small">@Formatos.Ha(d.ProcessadaEm)</time></li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="feed-empty"><Sol Expressao="espiando" Tamanho="64" /><span>@(aceita ? "Ainda não há doações. Que tal fazer a primeira?" : "Esta campanha não recebeu doações.")</span></li>
+                    }
+                </ul>
+            </div>
+            <aside>
+                <div class="card donate-card" id="doar-card">
+                    <span class="muted small">Arrecadado até agora</span>
+                    <div class="big tnum" data-teste="valor-arrecadado">@Formatos.Dinheiro(c.ValorTotalArrecadado)</div>
+                    <div class="muted small" style="margin-bottom:12px">de @Formatos.DinheiroInteiro(c.MetaFinanceira) · @Formatos.Porcentagem(progresso) da meta</div>
+                    <Medidor Progresso="@progresso" Classe="lg" />
+                    <div class="donate-stats">
+                        <div><strong class="tnum">@Formatos.Numero(_doacoes?.QuantidadeDoacoes ?? 0)</strong><span>doações</span></div>
+                        <div><strong class="tnum">@Formatos.Numero(_doacoes?.QuantidadeDoadores ?? 0)</strong><span>doadores</span></div>
+                        <div><strong>@(aceita ? Math.Max(0, Formatos.DiasRestantes(c.DataFim)).ToString() : "—")</strong><span>dias restantes</span></div>
+                    </div>
+                    <BlocoDoar Campanha="c" Aceita="aceita" />
+                </div>
+            </aside>
+        </div>
+        @if (aceita && !Sessao.EhGestor)
+        {
+            <div class="doar-spacer"></div>
+            <div class="doar-bar" id="doar-bar">
+                <div class="db-info"><b class="tnum">@Formatos.DinheiroInteiro(c.ValorTotalArrecadado) <span>de @Formatos.DinheiroInteiro(c.MetaFinanceira)</span></b><Medidor Progresso="@progresso" Classe="thin" /></div>
+                <a class="btn btn-doar" href="@(Sessao.Logado ? $"campanhas/{c.Id}#doar-card" : "entrar")" @onclick="IrDoar" @onclick:preventDefault="true"><Icone Nome="heart" Tamanho="17" />@(Sessao.Logado ? "Doar" : "Entrar para doar")</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Campanha? _campanha;
+    private DoacoesDaCampanha? _doacoes;
+    private bool _naoEncontrada;
+    private string? _erro;
+    private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override void OnInitialized() => _ = AtualizarSozinhoAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _campanha = null;
+        _doacoes = null;
+        _naoEncontrada = false;
+        await CarregarAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool primeira)
+    {
+        // Esconde a barra fixa de doar enquanto o cartão de doação está visível (como no protótipo).
+        if (_campanha is not null) await Js.InvokeVoidAsync("cs.observarCartaoDoar");
+    }
+
+    private async Task CarregarAsync()
+    {
+        var campanha = Api.CampanhaAsync(Id);
+        var doacoes = Api.DoacoesDaCampanhaAsync(Id);
+        var rc = await campanha;
+        if (!rc.Ok)
+        {
+            _naoEncontrada = rc.Problema!.Status == 404;
+            if (!_naoEncontrada && _campanha is null) _erro = rc.Problema.Mensagem;
+            return;
+        }
+        _campanha = rc.Valor;
+        _erro = null;
+        var rd = await doacoes;
+        if (rd.Ok) _doacoes = rd.Valor;
+    }
+
+    // O valor arrecadado e as doações recentes se atualizam sozinhos (o worker processa em segundos).
+    private async Task AtualizarSozinhoAsync()
+    {
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(_cts.Token))
+            {
+                await CarregarAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task IrDoar()
+    {
+        if (!Sessao.Logado)
+        {
+            Sessao.VoltarPara = $"campanhas/{Id}";
+            Nav.NavigateTo("entrar");
+            return;
+        }
+        await Js.InvokeVoidAsync("cs.rolarAte", "doar-card");
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        _timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
