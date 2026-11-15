@@ -215,7 +215,7 @@ html.animar .grid-cards > .camp-card:nth-child(n+4) { animation-delay: .15s; }
 
 /* Gestão: "Instalar app" é item do menu no computador e ícone na barra de baixo no celular. */
 .g-nav .so-desktop { display: contents; }
-.g-nav .instalar-item { width: 100%; gap: 11px; padding: 9px 12px; font: 550 14.5px var(--f-body); }
+.g-nav .instalar-item { display: flex; justify-content: flex-start; width: 100%; margin: 0; gap: 11px; padding: 9px 12px; font: 550 14.5px var(--f-body); color: var(--ink-2); text-align: left; }
 .g-user .so-celular { display: none; }
 .g-user small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 900px) {
